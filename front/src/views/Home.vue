@@ -67,6 +67,9 @@ onMounted(() => {
 
 <template>
   <div class="home">
+    <!-- 汉服小小人物 固定右下角 -->
+    <img class="home__avatar-xiaoxiao" src="front\image\小小_汉服 1.jpg" alt="小小汉服人物" />
+
     <!-- 仅保留核心模块卡片区，完全匹配设计图 -->
     <div class="home__modules">
       <!-- 第一行：寻找文化、重温文化、宣传有法 -->
@@ -132,13 +135,28 @@ onMounted(() => {
 .home {
   min-height: 100vh;
   width: 100%;
-  /* 后续替换为你的背景图路径 */
-  background: #ffffff;
+  /* 引入背景图 image 19.png */
+  background: url('front\image\image 19.png') center center / cover no-repeat;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0 80px;
   box-sizing: border-box;
+  /* 开启相对定位，用于内部人物绝对定位 */
+  position: relative;
+  overflow: hidden;
+}
+
+/* 汉服小小人物 右下角固定 */
+.home__avatar-xiaoxiao {
+  position: absolute;
+  right: 60px;
+  bottom: 0;
+  height: 80vh;
+  max-height: 720px;
+  width: auto;
+  pointer-events: none;
+  user-select: none;
 }
 
 /* 模块卡片总容器 */
@@ -148,6 +166,7 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 60px;
+  z-index: 2;
 }
 
 /* 卡片行 */
@@ -169,7 +188,7 @@ onMounted(() => {
   flex-direction: column;
   gap: 16px;
   width: auto;
-  min-width: 220px;
+  min-width: 160px;
   /* 固定总高度：标题48px + 间距16px + 子卡片120px = 184px */
   height: 184px;
 }
