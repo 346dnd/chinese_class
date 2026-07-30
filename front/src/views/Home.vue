@@ -134,6 +134,7 @@ onMounted(() => {
             :key="task.id"
             class="method-popup-item"
             :class="{ 'task-finished': task.finished }"
+            @click="selectTask('method', task.id)"
           >
             <span>⇨</span>
             {{ task.name }}

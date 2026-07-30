@@ -1,1 +1,0 @@
-import{r as t}from"./index-dCy2f_oV.js";const m=()=>{const a=t(!1),i=t(""),n=t(""),s=(o,e)=>{i.value=o,n.value=e,a.value=!0};return{showDigitalHuman:a,digitalHumanName:i,digitalHumanMessage:n,show:s,hide:()=>{a.value=!1},showLuoluo:o=>{s("罗罗",o)},showXiaoxiao:o=>{s("小小",o)},showEthan:o=>{s("伊森",o)},showMia:o=>{s("米娅",o)}}};export{m as u};

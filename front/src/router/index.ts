@@ -23,6 +23,10 @@ const routes = [
   {
     path: '/preview/fill-blank',
     component: () => import('@/views/FillBlank.vue'),
+  },
+  {
+    path: '/method/zhaozhouqiao',
+    component: () => import('@/views/ZGQExpressMethod.vue'),
   }
 ]
 

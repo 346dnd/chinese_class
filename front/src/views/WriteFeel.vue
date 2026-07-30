@@ -23,6 +23,8 @@
     <!-- 右侧容器 -->
     <div class="right-container">
       <div class="write-feel-modal">
+        <h3 class="modal-title">写写感想 <span class="voice-icon">🔊</span></h3>
+
         <!-- 已完成的题目列表 -->
         <div v-for="(item, idx) in completedItems" :key="'done-' + idx" class="completed-item">
           <div class="completed-question">{{ item.question }}</div>
@@ -34,7 +36,6 @@
 
         <!-- 当前正在进行的题目 -->
         <template v-if="!isAllDone">
-          <h3 class="modal-title">写写感想 <span class="voice-icon">🔊</span></h3>
 
           <p class="guide-desc">
             <template v-if="currentArticle.id === 'paper'">

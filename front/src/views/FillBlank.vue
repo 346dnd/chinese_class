@@ -35,6 +35,8 @@
     <!-- 右侧容器 -->
     <div class="right-container">
       <div class="write-feel-modal">
+        <h3 class="modal-title">初步感悟 <span class="voice-icon">🔊</span></h3>
+
         <!-- 已完成的题目列表（保留显示题目+答案，按对错着色） -->
         <div v-for="(item, idx) in completedItems" :key="'done-' + idx" class="completed-item">
           <div class="guide-desc" v-html="item.renderedHTML"></div>
@@ -42,7 +44,6 @@
 
         <!-- 当前正在进行的题目 -->
         <template v-if="!isAllDone">
-          <h3 class="modal-title">初步感悟 <span class="voice-icon">🔊</span></h3>
 
           <p class="guide-desc">
             <template v-if="currentArticleId === 'bridge'">
