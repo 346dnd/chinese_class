@@ -2,7 +2,7 @@
   <div class="page-container">
     <!-- 顶部返回导航栏 -->
     <div class="top-nav">
-      <span class="back-icon" @click="goBack">&lt;</span>
+      <span class="back-icon" @click="goBack">‹</span>
       <span class="nav-title">寻找文化：初步感悟</span>
     </div>
 
@@ -13,6 +13,10 @@
         alt="数字人"
         class="digital-human-img"
       />
+      <div class="human-talk-bubble">
+        亲爱的某某同学，我们来梳理"围绕一个意思把一段话写清楚"的表达方法吧。你可以点击课文名称打开课文。
+        <span class="voice-icon">🔊</span>
+      </div>
     </div>
 
     <!-- 课文标签切换 -->
@@ -22,131 +26,257 @@
         :key="tabName"
         class="tab-item"
         :class="{ active: activeTab === tabName }"
-        @click="switchArticleTab(tabName)"
+        @click="openArticle(tabName)"
       >
         {{ tabName }}
       </div>
-      <div class="modal-close-icon" @click="goBack">×</div>
     </div>
 
-    <!-- 右侧容器（弹窗 + 提交按钮） -->
+    <!-- 右侧容器 -->
     <div class="right-container">
       <div class="write-feel-modal">
-      <h3 class="modal-title">写写感想 <span class="voice-icon">🔊</span></h3>
+        <h3 class="modal-title">初步感悟 <span class="voice-icon">🔊</span></h3>
 
-      <p class="guide-desc">
-        <template v-if="currentArticle.id === 'paper'">
-          这三篇课文都写到了中华优秀传统文化的内容，在《纸的发明》里，是哪些方面让你自豪？《赵州桥》《一幅名扬中外的画》又分别是哪些方面让你自豪？请把特别让你自豪的这些方面写下来，记得都能够联系相应的课文内容和生活实际想法。
+        <!-- 赵州桥题目 -->
+        <template v-if="currentArticleId === 'bridge'">
+          <p class="guide-desc">
+            亲爱的某某同学，来体会"围绕一个意思把一段话写清楚"的表达方法吧。<br>
+            一、在《赵州桥》的课文中<br>
+            作者详细介绍了桥面
+            <input
+              class="fill-input"
+              type="text"
+              v-model="answers.bridge[0]"
+              :placeholder="answers.bridge[0] ? '' : '点击输入'"
+              @blur="checkAnswer('bridge', 0)"
+            />
+            、桥洞的
+            <input
+              class="fill-input"
+              type="text"
+              v-model="answers.bridge[1]"
+              :placeholder="answers.bridge[1] ? '' : '点击输入'"
+              @blur="checkAnswer('bridge', 1)"
+            />
+            ，把每种
+            <input
+              class="fill-input"
+              type="text"
+              v-model="answers.bridge[2]"
+              :placeholder="answers.bridge[2] ? '' : '点击输入'"
+              @blur="checkAnswer('bridge', 2)"
+            />
+            的
+            <input
+              class="fill-input"
+              type="text"
+              v-model="answers.bridge[3]"
+              :placeholder="answers.bridge[3] ? '' : '点击输入'"
+              @blur="checkAnswer('bridge', 3)"
+            />
+            <input
+              class="fill-input"
+              type="text"
+              v-model="answers.bridge[4]"
+              :placeholder="answers.bridge[4] ? '' : '点击输入'"
+              @blur="checkAnswer('bridge', 4)"
+            />
+            写得清清楚楚。
+          </p>
         </template>
-        <template v-else-if="currentArticle.id === 'bridge'">
-          在《赵州桥》里，哪些方面让你感到自豪？
+
+        <!-- 一幅名扬中外的画题目 -->
+        <template v-else-if="currentArticleId === 'painting'">
+          <p class="guide-desc">
+            二、在《一幅名扬中外的画》的课文中<br>
+            作者详细介绍了画上的
+            <input
+              class="fill-input"
+              type="text"
+              v-model="answers.painting[0]"
+              :placeholder="answers.painting[0] ? '' : '点击输入'"
+              @blur="checkAnswer('painting', 0)"
+            />
+            、
+            <input
+              class="fill-input"
+              type="text"
+              v-model="answers.painting[1]"
+              :placeholder="answers.painting[1] ? '' : '点击输入'"
+              @blur="checkAnswer('painting', 1)"
+            />
+            ，把画面的
+            <input
+              class="fill-input"
+              type="text"
+              v-model="answers.painting[2]"
+              :placeholder="answers.painting[2] ? '' : '点击输入'"
+              @blur="checkAnswer('painting', 2)"
+            />
+            和
+            <input
+              class="fill-input"
+              type="text"
+              v-model="answers.painting[3]"
+              :placeholder="answers.painting[3] ? '' : '点击输入'"
+              @blur="checkAnswer('painting', 3)"
+            />
+            写得清清楚楚。
+          </p>
         </template>
-        <template v-else-if="currentArticle.id === 'painting'">
-          《一幅名扬中外的画》哪些细节让你感到自豪？
+
+        <!-- 纸的发明题目 -->
+        <template v-else-if="currentArticleId === 'paper'">
+          <p class="guide-desc">
+            三、在《纸的发明》的课文中<br>
+            作者详细介绍了纸的
+            <input
+              class="fill-input"
+              type="text"
+              v-model="answers.paper[0]"
+              :placeholder="answers.paper[0] ? '' : '点击输入'"
+              @blur="checkAnswer('paper', 0)"
+            />
+            、
+            <input
+              class="fill-input"
+              type="text"
+              v-model="answers.paper[1]"
+              :placeholder="answers.paper[1] ? '' : '点击输入'"
+              @blur="checkAnswer('paper', 1)"
+            />
+            ，以及纸的
+            <input
+              class="fill-input"
+              type="text"
+              v-model="answers.paper[2]"
+              :placeholder="answers.paper[2] ? '' : '点击输入'"
+              @blur="checkAnswer('paper', 2)"
+            />
+            过程。
+          </p>
         </template>
-      </p>
+      </div>
 
-
-
-      <!-- 输入框（内含语音/拍照按钮） -->
-      <div class="input-wrapper">
-        <div class="feel-input-box">
-          <textarea
-            v-model="userInputFeel"
-            class="feel-input"
-            placeholder="输入你的理由..."
-            :disabled="inputDisabled"
-          ></textarea>
-          
-
-      <!-- 提交按钮（在白色弹窗外部下方） -->
+      <!-- 底部按钮 -->
       <button
         class="submit-btn"
-        @click="submitFeel"
-        :disabled="inputDisabled"
+        @click="handleSubmit"
+        :disabled="!isCurrentArticleComplete"
       >
-        ⇧ 提交
+        {{ submitButtonText }}
       </button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
 
-const tabList = ref<string[]>(['纸的发明',  '一幅名扬中外的画'])
-const activeTab = ref<string>('纸的发明')
+// 课文列表
+const tabList = ref<string[]>(['赵州桥', '一幅名扬中外的画', '纸的发明'])
+const activeTab = ref<string>('赵州桥')
+const currentArticleId = ref('bridge')
 
-const articles = reactive({
-  paper: {
-    id: 'paper',
-    hintText1: '在《纸的发明》中，是哪些让你感到自豪？',
-    hintText2: '这是学生输入的文字信息，这里的文字只是为了让学生可以看到前面的课文输入的内容，只可以查看，不可以重新修改。'
-  },
-  bridge: {
-    id: 'bridge',
-    hintText1: '在《赵州桥》，是哪些让你感到自豪？',
-    hintText2: ''
-  },
-  painting: {
-    id: 'painting',
-    hintText1: '在《一幅名扬中外的画》里，是哪些细节让你感到自豪？',
-    hintText2: ''
-  }
+const articleMapping: Record<string, string> = {
+  '赵州桥': 'bridge',
+  '一幅名扬中外的画': 'painting',
+  '纸的发明': 'paper'
+}
+
+// 答案数据（每篇课文的填空答案）
+const answers = reactive({
+  bridge: ['', '', '', '', ''],
+  painting: ['', '', '', ''],
+  paper: ['', '', '']
 })
 
-const currentArticle = ref(articles.paper)
+// 错误次数记录（每个填空框的错误次数）
+const errorCounts = reactive({
+  bridge: [0, 0, 0, 0, 0],
+  painting: [0, 0, 0, 0],
+  paper: [0, 0, 0]
+})
 
-// 用户输入
-const userInputFeel = ref('')
-const inputDisabled = ref(false)
+// 每篇课文的正确答案（模拟数据，后续接入接口）
+const correctAnswers: Record<string, string[]> = {
+  bridge: ['结构特点', '设计原理', '造型', '美观', '坚固'],
+  painting: ['人物', '场景', '内容', '细节'],
+  paper: ['历史', '原料', '制作']
+}
 
-/**
- * 加载文章内容
- */
-const loadArticleContent = (tabName: string) => {
-  const mapping: Record<string, keyof typeof articles> = {
-    '纸的发明': 'paper',
-    '一幅名扬中外的画': 'painting'
-  }
-  const key = mapping[tabName]
-  if (key) {
-    currentArticle.value = articles[key]
-    userInputFeel.value = ''
+// 已完成的课文
+const completedArticles = reactive(new Set<string>())
+
+// 当前课文是否全部填写完成
+const isCurrentArticleComplete = computed(() => {
+  const currentAnswers = answers[currentArticleId.value as keyof typeof answers]
+  return currentAnswers.every(a => a.trim() !== '')
+})
+
+// 提交按钮文字
+const submitButtonText = computed(() => {
+  const currentIdx = tabList.value.indexOf(activeTab.value)
+  const isLast = currentIdx === tabList.value.length - 1
+  return isLast ? '全部完成' : '提交'
+})
+
+// 打开课文（点击标签）
+const openArticle = (tabName: string) => {
+  // TODO: 接入后端接口打开课文内容
+  // const res = await api.getArticle(tabName)
+  activeTab.value = tabName
+  currentArticleId.value = articleMapping[tabName]
+}
+
+// 检查答案（失焦时触发）
+const checkAnswer = (articleId: string, index: number) => {
+  // TODO: 接入AI接口验证答案
+  // const res = await api.checkAnswer(articleId, index, answers[articleId][index])
+
+  // 模拟：如果错误2次，AI填入答案
+  if (errorCounts[articleId][index] >= 2) {
+    // AI填入答案
+    const aiAnswer = correctAnswers[articleId][index]
+    answers[articleId][index] = aiAnswer
+    errorCounts[articleId][index] = 0
   }
 }
 
-// 切换标签
+// 提交处理
+const handleSubmit = () => {
+  const currentIdx = tabList.value.indexOf(activeTab.value)
+  const isLast = currentIdx === tabList.value.length - 1
+
+  // TODO: 接入后端接口保存答案
+  // await api.submitAnswers(currentArticleId.value, answers[currentArticleId.value])
+
+  completedArticles.add(currentArticleId.value)
+
+  if (isLast) {
+    // 全部完成
+    alert('恭喜你完成了所有课文的填空！')
+    goBack()
+  } else {
+    // 切换到下一篇
+    const nextTab = tabList.value[currentIdx + 1]
+    openArticle(nextTab)
+  }
+}
+
+// 切换课文标签（手动切换）
 const switchArticleTab = (tabName: string) => {
   if (tabName === activeTab.value) return
-  activeTab.value = tabName
-  loadArticleContent(tabName)
-}
-
-
-// 提交并下一篇
-const submitFeel = () => {
-  if (!userInputFeel.value.trim()) {
-    alert('请填写感想内容')
-    return
-  }
-
-  const currentIndex = tabList.value.indexOf(activeTab.value)
-  if (currentIndex < tabList.value.length - 1) {
-    switchArticleTab(tabList.value[currentIndex + 1])
-  } else {
-    alert('已是最后一篇课文，提交成功！')
-    goBack()
-  }
+  openArticle(tabName)
 }
 
 const goBack = () => router.push('/')
 
 onMounted(() => {
-  loadArticleContent(activeTab.value)
+  currentArticleId.value = articleMapping[activeTab.value]
 })
 </script>
 
@@ -173,8 +303,21 @@ onMounted(() => {
   display: block;
   filter: drop-shadow(0 8px 20px rgba(0,0,0,0.25));
 }
+.human-talk-bubble {
+  position: absolute;
+  left: 190px;
+  top: 20px;
+  width: 320px;
+  background: #fff;
+  border-radius: 12px;
+  padding: 14px 16px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: #333;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+}
 
-/* 顶部导航栏 严格匹配原型 */
+/* 顶部导航栏 */
 .top-nav {
   position: absolute;
   top: 30px;
@@ -187,7 +330,7 @@ onMounted(() => {
   padding: 0 25px;
   background: rgba(242, 240, 238, 0.45);
   border-radius: 12px;
-  color: #ffffff;
+  color: #333;
   font-size: 18px;
   z-index: 10;
 }
@@ -205,7 +348,7 @@ onMounted(() => {
   align-items: center;
   background: rgba(240, 239, 238, 0.3);
   border-radius: 12px;
-  border: 1px solid rgb(250, 248, 247,0.5);
+  border: 1px solid rgba(250, 248, 247, 0.5);
   padding: 6px 14px;
   gap: 8px;
   z-index: 10;
@@ -220,25 +363,19 @@ onMounted(() => {
   color: #333;
   cursor: pointer;
   border: 1px solid #ddd;
+  transition: all 0.2s;
+}
+.tab-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 .tab-item.active {
-  background: #3668e8;
+  background: #f7c846;
   color: #fff;
-  border-color: #3668e8;
-}
-.modal-close-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: #fff;
-  text-align: center;
-  line-height: 32px;
-  font-size: 18px;
-  cursor: pointer;
-  margin-left: 10px;
+  border-color: #f7c846;
 }
 
-/* 右侧容器：弹窗 + 提交按钮 */
+/* 右侧容器 */
 .right-container {
   position: absolute;
   top: 120px;
@@ -247,71 +384,88 @@ onMounted(() => {
   z-index: 10;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 14px;
 }
 
-/* 右侧白色弹窗 高度跟随内容自适应 */
+/* 右侧白色弹窗 */
 .write-feel-modal {
   width: 100%;
-  min-height: 420px;
-  background: rgba(255, 255, 255, 0.89);
+  background: rgba(255, 255, 255, 0.92);
   border-radius: 18px;
-  padding: 26px 26px 20px;
+  padding: 24px 26px 22px;
   box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-  display: flex;
-  flex-direction: column;
 }
 
 .modal-title {
   font-size: 22px;
   font-weight: 600;
   color: #111;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
   display: flex;
   align-items: center;
   gap: 8px;
 }
 .voice-icon {
   font-size: 16px;
+  cursor: pointer;
 }
 
 .guide-desc {
   font-size: 15px;
   color: #333;
-  line-height: 1.65;
-  margin-bottom: 20px;
+  line-height: 2;
 }
 
+/* 填空输入框 */
+.fill-input {
+  display: inline-block;
+  width: 100px;
+  border: none;
+  border-bottom: 1.5px solid #4078e8;
+  padding: 4px 6px;
+  margin: 0 4px;
+  font-size: 15px;
+  color: #4078e8;
+  background: transparent;
+  text-align: center;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.fill-input::placeholder {
+  color: #a0b4e8;
+  font-size: 14px;
+}
+.fill-input:focus {
+  border-bottom-color: #2a53b8;
+  border-bottom-width: 2px;
+}
 
-
-/* 提交按钮（白色弹窗外部下方） */
+/* 提交按钮 */
 .submit-btn {
   width: 100%;
   height: 52px;
-  background: #2a53b8;
+  background: linear-gradient(135deg, #f7c846 0%, #e5b535 100%);
   color: #fff;
   border: none;
   border-radius: 30px;
   font-size: 18px;
+  font-weight: 500;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
   transition: all 0.25s;
-  animation: slideDown 0.3s ease;
+  box-shadow: 0 4px 14px rgba(247, 200, 70, 0.4);
 }
 .submit-btn:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(42, 83, 184, 0.4);
+  box-shadow: 0 6px 20px rgba(247, 200, 70, 0.5);
 }
 .submit-btn:disabled {
-  opacity: 0.5;
+  background: #e9e9e9;
+  color: #999;
   cursor: not-allowed;
-}
-
-@keyframes slideDown {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
+  box-shadow: none;
 }
 </style>

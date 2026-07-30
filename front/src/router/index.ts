@@ -14,8 +14,15 @@ const routes = [
   },
   {
     path: '/preview',
-    name: 'Preview',
-    component: () => import('@/views/Preview.vue')
+    component: () => import('@/views/index.vue'),
+  },
+  {
+    path: '/preview/write-feel',
+    component: () => import('@/views/WriteFeel.vue'),
+  },
+  {
+    path: '/preview/fill-blank',
+    component: () => import('@/views/FillBlank.vue'),
   },
   {
     path: '/warmup',

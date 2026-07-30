@@ -9,6 +9,7 @@ export default defineConfig({
       '@': resolve(__dirname, 'src')
     }
   },
+  publicDir: resolve(__dirname, 'image'),
   server: {
     port: 3000,
     proxy: {
