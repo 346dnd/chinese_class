@@ -36,13 +36,15 @@
         <div class="step-card">
           <p class="step-question">在《赵州桥》的第3自然段里，一个意思指的是：</p>
           <div class="input-box" v-if="step === 1">
-            <input
-              v-model="answer1"
-              class="input-field"
-              placeholder="点击窗口输入"
-              readonly
-            />
-            <span class="mic-btn">🎤语音</span>
+            <div class="input-with-action">
+              <input
+                v-model="answer1"
+                class="input-field"
+                placeholder="点击窗口输入"
+                readonly
+              />
+              <span class="mic-btn">🎤语音</span>
+            </div>
             <button class="confirm-btn" @click="submitStep1">确定</button>
           </div>
           <div class="answer-result" v-if="step >= 2">
@@ -58,13 +60,15 @@
         <div class="step-card" v-if="step >= 2">
           <p class="step-question">根据这一个意思写一句中心句：</p>
           <div class="input-box" v-if="step === 2">
-            <input
-              v-model="answer2"
-              class="input-field"
-              placeholder="不正确，请重新输入"
-              readonly
-            />
-            <span class="mic-btn">🎤语音</span>
+            <div class="input-with-action">
+              <input
+                v-model="answer2"
+                class="input-field"
+                placeholder="不正确，请重新输入"
+                readonly
+              />
+              <span class="mic-btn">🎤语音</span>
+            </div>
             <button class="confirm-btn" @click="submitStep2">确定</button>
           </div>
           <div class="answer-result" v-if="step >= 3">
@@ -79,8 +83,10 @@
         <div class="step-card" v-if="step >= 3">
           <p class="step-question">围绕这中心句，后面每一句话写的内容都跟这个意思有关。可以用上修辞手法，可以用事例或细节来写具体。请你读读中心句后面的句子，体会这种写法。</p>
           <div class="read-box" v-if="step === 3">
-            <input class="read-input" readonly placeholder="朗读" />
-            <span class="mic-btn">🎤</span>
+            <div class="input-with-action">
+              <input class="read-input" readonly placeholder="朗读" />
+              <span class="mic-btn">🎤</span>
+            </div>
             <div class="read-buttons" v-if="hasRead">
               <button class="play-btn">▶ 播放</button>
               <button class="replay-btn">↺ 重读</button>
@@ -189,11 +195,12 @@ const submitStep2 = () => {
   position: absolute;
   left: 170px;
   top: 10px;
-  background: rgba(132, 131, 131, 0.5);
+  background: rgba(59, 58, 58, 0.5);
   padding: 12px 16px;
   border-radius: 12px;
   width: 340px;
   font-size: 15px;
+  color: #fff;
   line-height: 1.6;
 }
 .voice-btn {
@@ -282,18 +289,28 @@ const submitStep2 = () => {
 
 .input-box {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 8px;
+}
+.input-with-action {
+  position: relative;
+  width: 100%;
 }
 .input-field {
   width: 100%;
   border: 1px solid #ddd;
   border-radius: 6px;
-  padding: 8px 10px;
+  padding: 8px 60px 8px 10px;
+  box-sizing: border-box;
 }
-.mic-btn {
+.input-with-action .mic-btn {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
   color: #3678e8;
   cursor: pointer;
+  font-size: 13px;
 }
 .confirm-btn {
   background: #3678e8;
@@ -301,7 +318,7 @@ const submitStep2 = () => {
   border: none;
   border-radius: 6px;
   padding: 6px 16px;
-  margin-left: auto;
+  align-self: flex-end;
 }
 
 .answer-result {
@@ -322,14 +339,15 @@ const submitStep2 = () => {
 
 .read-box {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 8px;
 }
 .read-input {
   width: 100%;
   border: 1px solid #ddd;
   border-radius: 6px;
-  padding: 8px 10px;
+  padding: 8px 60px 8px 10px;
+  box-sizing: border-box;
 }
 .read-buttons {
   display: flex;
