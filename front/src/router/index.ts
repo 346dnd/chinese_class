@@ -23,41 +23,6 @@ const routes = [
   {
     path: '/preview/fill-blank',
     component: () => import('@/views/FillBlank.vue'),
-  },
-  {
-    path: '/warmup',
-    name: 'Warmup',
-    component: () => import('@/views/Warmup.vue')
-  },
-  {
-    path: '/method',
-    name: 'Method',
-    component: () => import('@/views/Method.vue')
-  },
-  {
-    path: '/creation',
-    name: 'Creation',
-    component: () => import('@/views/Creation.vue')
-  },
-  {
-    path: '/chat',
-    name: 'ChatRoom',
-    component: () => import('@/views/ChatRoom.vue')
-  },
-  {
-    path: '/homework',
-    name: 'Homework',
-    component: () => import('@/views/Homework.vue')
-  },
-  {
-    path: '/profile',
-    name: 'Profile',
-    component: () => import('@/views/Profile.vue')
-  },
-  {
-    path: '/dashboard',
-    name: 'Dashboard',
-    component: () => import('@/views/Dashboard.vue')
   }
 ]
 

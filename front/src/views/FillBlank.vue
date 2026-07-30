@@ -25,7 +25,7 @@
         v-for="tabName in tabList"
         :key="tabName"
         class="tab-item"
-        :class="{ active: activeTab === tabName }"
+        :class="getTabClass(tabName)"
         @click="openArticle(tabName)"
       >
         {{ tabName }}
@@ -35,131 +35,121 @@
     <!-- 右侧容器 -->
     <div class="right-container">
       <div class="write-feel-modal">
-        <h3 class="modal-title">初步感悟 <span class="voice-icon">🔊</span></h3>
+        <!-- 已完成的题目列表（保留显示题目+答案，按对错着色） -->
+        <div v-for="(item, idx) in completedItems" :key="'done-' + idx" class="completed-item">
+          <div class="guide-desc" v-html="item.renderedHTML"></div>
+        </div>
 
-        <!-- 赵州桥题目 -->
-        <template v-if="currentArticleId === 'bridge'">
-          <p class="guide-desc">
-            亲爱的某某同学，来体会"围绕一个意思把一段话写清楚"的表达方法吧。<br>
-            一、在《赵州桥》的课文中<br>
-            作者详细介绍了桥面
-            <input
-              class="fill-input"
-              type="text"
-              v-model="answers.bridge[0]"
-              :placeholder="answers.bridge[0] ? '' : '点击输入'"
-              @blur="checkAnswer('bridge', 0)"
-            />
-            、桥洞的
-            <input
-              class="fill-input"
-              type="text"
-              v-model="answers.bridge[1]"
-              :placeholder="answers.bridge[1] ? '' : '点击输入'"
-              @blur="checkAnswer('bridge', 1)"
-            />
-            ，把每种
-            <input
-              class="fill-input"
-              type="text"
-              v-model="answers.bridge[2]"
-              :placeholder="answers.bridge[2] ? '' : '点击输入'"
-              @blur="checkAnswer('bridge', 2)"
-            />
-            的
-            <input
-              class="fill-input"
-              type="text"
-              v-model="answers.bridge[3]"
-              :placeholder="answers.bridge[3] ? '' : '点击输入'"
-              @blur="checkAnswer('bridge', 3)"
-            />
-            <input
-              class="fill-input"
-              type="text"
-              v-model="answers.bridge[4]"
-              :placeholder="answers.bridge[4] ? '' : '点击输入'"
-              @blur="checkAnswer('bridge', 4)"
-            />
-            写得清清楚楚。
-          </p>
-        </template>
+        <!-- 当前正在进行的题目 -->
+        <template v-if="!isAllDone">
+          <h3 class="modal-title">初步感悟 <span class="voice-icon">🔊</span></h3>
 
-        <!-- 一幅名扬中外的画题目 -->
-        <template v-else-if="currentArticleId === 'painting'">
           <p class="guide-desc">
-            二、在《一幅名扬中外的画》的课文中<br>
-            作者详细介绍了画上的
-            <input
-              class="fill-input"
-              type="text"
-              v-model="answers.painting[0]"
-              :placeholder="answers.painting[0] ? '' : '点击输入'"
-              @blur="checkAnswer('painting', 0)"
-            />
-            、
-            <input
-              class="fill-input"
-              type="text"
-              v-model="answers.painting[1]"
-              :placeholder="answers.painting[1] ? '' : '点击输入'"
-              @blur="checkAnswer('painting', 1)"
-            />
-            ，把画面的
-            <input
-              class="fill-input"
-              type="text"
-              v-model="answers.painting[2]"
-              :placeholder="answers.painting[2] ? '' : '点击输入'"
-              @blur="checkAnswer('painting', 2)"
-            />
-            和
-            <input
-              class="fill-input"
-              type="text"
-              v-model="answers.painting[3]"
-              :placeholder="answers.painting[3] ? '' : '点击输入'"
-              @blur="checkAnswer('painting', 3)"
-            />
-            写得清清楚楚。
-          </p>
-        </template>
+            <template v-if="currentArticleId === 'bridge'">
+              亲爱的某某同学，来体会"围绕一个意思把一段话写清楚"的表达方法吧。<br>
+              一、在《赵州桥》的课文中<br>
+              作者详细介绍了桥面
+              <input
+                class="fill-input"
+                :class="{ 'correct-input': answerStatus.bridge[0] === 'correct', 'wrong-input': answerStatus.bridge[0] === 'wrong' }"
+                type="text" v-model="answers.bridge[0]"
+                :readonly="completedArticles.includes('赵州桥')"
+                :placeholder="answers.bridge[0] ? '' : '点击输入'" />
+              、桥洞的
+              <input
+                class="fill-input"
+                :class="{ 'correct-input': answerStatus.bridge[1] === 'correct', 'wrong-input': answerStatus.bridge[1] === 'wrong' }"
+                type="text" v-model="answers.bridge[1]"
+                :readonly="completedArticles.includes('赵州桥')"
+                :placeholder="answers.bridge[1] ? '' : '点击输入'" />
+              ，把每种
+              <input
+                class="fill-input"
+                :class="{ 'correct-input': answerStatus.bridge[2] === 'correct', 'wrong-input': answerStatus.bridge[2] === 'wrong' }"
+                type="text" v-model="answers.bridge[2]"
+                :readonly="completedArticles.includes('赵州桥')"
+                :placeholder="answers.bridge[2] ? '' : '点击输入'" />
+              的
+              <input
+                class="fill-input"
+                :class="{ 'correct-input': answerStatus.bridge[3] === 'correct', 'wrong-input': answerStatus.bridge[3] === 'wrong' }"
+                type="text" v-model="answers.bridge[3]"
+                :readonly="completedArticles.includes('赵州桥')"
+                :placeholder="answers.bridge[3] ? '' : '点击输入'" />
+              <input
+                class="fill-input"
+                :class="{ 'correct-input': answerStatus.bridge[4] === 'correct', 'wrong-input': answerStatus.bridge[4] === 'wrong' }"
+                type="text" v-model="answers.bridge[4]"
+                :readonly="completedArticles.includes('赵州桥')"
+                :placeholder="answers.bridge[4] ? '' : '点击输入'" />
+              写得清清楚楚。
+            </template>
 
-        <!-- 纸的发明题目 -->
-        <template v-else-if="currentArticleId === 'paper'">
-          <p class="guide-desc">
-            三、在《纸的发明》的课文中<br>
-            作者详细介绍了纸的
-            <input
-              class="fill-input"
-              type="text"
-              v-model="answers.paper[0]"
-              :placeholder="answers.paper[0] ? '' : '点击输入'"
-              @blur="checkAnswer('paper', 0)"
-            />
-            、
-            <input
-              class="fill-input"
-              type="text"
-              v-model="answers.paper[1]"
-              :placeholder="answers.paper[1] ? '' : '点击输入'"
-              @blur="checkAnswer('paper', 1)"
-            />
-            ，以及纸的
-            <input
-              class="fill-input"
-              type="text"
-              v-model="answers.paper[2]"
-              :placeholder="answers.paper[2] ? '' : '点击输入'"
-              @blur="checkAnswer('paper', 2)"
-            />
-            过程。
+            <template v-else-if="currentArticleId === 'painting'">
+              二、在《一幅名扬中外的画》的课文中<br>
+              作者详细介绍了画上的
+              <input
+                class="fill-input"
+                :class="{ 'correct-input': answerStatus.painting[0] === 'correct', 'wrong-input': answerStatus.painting[0] === 'wrong' }"
+                type="text" v-model="answers.painting[0]"
+                :readonly="completedArticles.includes('一幅名扬中外的画')"
+                :placeholder="answers.painting[0] ? '' : '点击输入'" />
+              、
+              <input
+                class="fill-input"
+                :class="{ 'correct-input': answerStatus.painting[1] === 'correct', 'wrong-input': answerStatus.painting[1] === 'wrong' }"
+                type="text" v-model="answers.painting[1]"
+                :readonly="completedArticles.includes('一幅名扬中外的画')"
+                :placeholder="answers.painting[1] ? '' : '点击输入'" />
+              ，把画面的
+              <input
+                class="fill-input"
+                :class="{ 'correct-input': answerStatus.painting[2] === 'correct', 'wrong-input': answerStatus.painting[2] === 'wrong' }"
+                type="text" v-model="answers.painting[2]"
+                :readonly="completedArticles.includes('一幅名扬中外的画')"
+                :placeholder="answers.painting[2] ? '' : '点击输入'" />
+              和
+              <input
+                class="fill-input"
+                :class="{ 'correct-input': answerStatus.painting[3] === 'correct', 'wrong-input': answerStatus.painting[3] === 'wrong' }"
+                type="text" v-model="answers.painting[3]"
+                :readonly="completedArticles.includes('一幅名扬中外的画')"
+                :placeholder="answers.painting[3] ? '' : '点击输入'" />
+              写得清清楚楚。
+            </template>
+
+            <template v-else-if="currentArticleId === 'paper'">
+              三、在《纸的发明》的课文中<br>
+              作者详细介绍了纸的
+              <input
+                class="fill-input"
+                :class="{ 'correct-input': answerStatus.paper[0] === 'correct', 'wrong-input': answerStatus.paper[0] === 'wrong' }"
+                type="text" v-model="answers.paper[0]"
+                :readonly="completedArticles.includes('纸的发明')"
+                :placeholder="answers.paper[0] ? '' : '点击输入'" />
+              、
+              <input
+                class="fill-input"
+                :class="{ 'correct-input': answerStatus.paper[1] === 'correct', 'wrong-input': answerStatus.paper[1] === 'wrong' }"
+                type="text" v-model="answers.paper[1]"
+                :readonly="completedArticles.includes('纸的发明')"
+                :placeholder="answers.paper[1] ? '' : '点击输入'" />
+              ，以及纸的
+              <input
+                class="fill-input"
+                :class="{ 'correct-input': answerStatus.paper[2] === 'correct', 'wrong-input': answerStatus.paper[2] === 'wrong' }"
+                type="text" v-model="answers.paper[2]"
+                :readonly="completedArticles.includes('纸的发明')"
+                :placeholder="answers.paper[2] ? '' : '点击输入'" />
+              过程。
+            </template>
           </p>
         </template>
       </div>
 
       <!-- 底部按钮 -->
       <button
+        v-if="!isAllDone"
         class="submit-btn"
         @click="handleSubmit"
         :disabled="!isCurrentArticleComplete"
@@ -176,7 +166,6 @@ import { useRouter } from 'vue-router'
 
 const router = useRouter()
 
-// 课文列表
 const tabList = ref<string[]>(['赵州桥', '一幅名扬中外的画', '纸的发明'])
 const activeTab = ref<string>('赵州桥')
 const currentArticleId = ref('bridge')
@@ -187,90 +176,107 @@ const articleMapping: Record<string, string> = {
   '纸的发明': 'paper'
 }
 
-// 答案数据（每篇课文的填空答案）
 const answers = reactive({
   bridge: ['', '', '', '', ''],
   painting: ['', '', '', ''],
   paper: ['', '', '']
 })
 
-// 错误次数记录（每个填空框的错误次数）
-const errorCounts = reactive({
-  bridge: [0, 0, 0, 0, 0],
-  painting: [0, 0, 0, 0],
-  paper: [0, 0, 0]
+const answerStatus = reactive({
+  bridge: ['pending', 'pending', 'pending', 'pending', 'pending'],
+  painting: ['pending', 'pending', 'pending', 'pending'],
+  paper: ['pending', 'pending', 'pending']
 })
 
-// 每篇课文的正确答案（模拟数据，后续接入接口）
 const correctAnswers: Record<string, string[]> = {
   bridge: ['结构特点', '设计原理', '造型', '美观', '坚固'],
   painting: ['人物', '场景', '内容', '细节'],
   paper: ['历史', '原料', '制作']
 }
 
-// 已完成的课文
-const completedArticles = reactive(new Set<string>())
+const completedArticles = ref<string[]>([])
+const completedItems = ref<{ articleId: string, articleName: string, renderedHTML: string }[]>([])
 
-// 当前课文是否全部填写完成
+const isAllDone = computed(() => completedArticles.value.length === tabList.value.length)
+
 const isCurrentArticleComplete = computed(() => {
+  if (isAllDone.value) return false
   const currentAnswers = answers[currentArticleId.value as keyof typeof answers]
   return currentAnswers.every(a => a.trim() !== '')
 })
 
-// 提交按钮文字
 const submitButtonText = computed(() => {
-  const currentIdx = tabList.value.indexOf(activeTab.value)
-  const isLast = currentIdx === tabList.value.length - 1
-  return isLast ? '全部完成' : '提交'
+  return '提交'
 })
 
-// 打开课文（点击标签）
+const getTabClass = (tabName: string) => {
+  const isCompleted = completedArticles.value.includes(tabName)
+  const isActive = activeTab.value === tabName
+  return {
+    'tab-completed': isCompleted,
+    'tab-active': isActive && !isCompleted,
+    'tab-locked': !isActive && !isCompleted
+  }
+}
+
+const renderCompletedHTML = (articleId: string, articleName: string) => {
+  const a = answers[articleId as keyof typeof answers]
+  const s = answerStatus[articleId as keyof typeof answerStatus]
+  const getInputClass = (idx: number) => {
+    if (s[idx] === 'correct') return 'correct-box'
+    if (s[idx] === 'wrong') return 'wrong-box'
+    return ''
+  }
+
+  const inputs = (texts: string[]) => {
+    return texts.map((t, i) => `<span class="answer-box ${getInputClass(i)}">${t}</span>`).join('')
+  }
+
+  if (articleId === 'bridge') {
+    return `亲爱的某某同学，来体会"围绕一个意思把一段话写清楚"的表达方法吧。<br>一、在《${articleName}》的课文中<br>作者详细介绍了桥面${inputs([a[0]])}、桥洞的${inputs([a[1]])}，把每种${inputs([a[2]])}的${inputs([a[3], a[4]])}写得清清楚楚。`
+  } else if (articleId === 'painting') {
+    return `二、在《${articleName}》的课文中<br>作者详细介绍了画上的${inputs([a[0], a[1]])}，把画面的${inputs([a[2], a[3]])}写得清清楚楚。`
+  } else {
+    return `三、在《${articleName}》的课文中<br>作者详细介绍了纸的${inputs([a[0], a[1]])}，以及纸的${inputs([a[2]])}过程。`
+  }
+}
+
 const openArticle = (tabName: string) => {
-  // TODO: 接入后端接口打开课文内容
-  // const res = await api.getArticle(tabName)
   activeTab.value = tabName
   currentArticleId.value = articleMapping[tabName]
 }
 
-// 检查答案（失焦时触发）
-const checkAnswer = (articleId: string, index: number) => {
-  // TODO: 接入AI接口验证答案
-  // const res = await api.checkAnswer(articleId, index, answers[articleId][index])
-
-  // 模拟：如果错误2次，AI填入答案
-  if (errorCounts[articleId][index] >= 2) {
-    // AI填入答案
-    const aiAnswer = correctAnswers[articleId][index]
-    answers[articleId][index] = aiAnswer
-    errorCounts[articleId][index] = 0
-  }
-}
-
-// 提交处理
 const handleSubmit = () => {
+  if (!isCurrentArticleComplete.value) return
+
+  const articleId = currentArticleId.value
+  const articleName = activeTab.value
+
+  // TODO: 接入后端接口批量判断答案对错
+  // const res = await api.batchCheckAnswers(articleId, answers[articleId])
+
+  const currentAnswers = answers[articleId as keyof typeof answers]
+  const statuses = answerStatus[articleId as keyof typeof answerStatus]
+  const correctList = correctAnswers[articleId as keyof typeof correctAnswers]
+
+  currentAnswers.forEach((ans, i) => {
+    statuses[i] = ans.trim() === correctList[i] ? 'correct' : 'wrong'
+  })
+
+  if (!completedArticles.value.includes(articleName)) {
+    completedArticles.value.push(articleName)
+    completedItems.value.push({
+      articleId,
+      articleName,
+      renderedHTML: renderCompletedHTML(articleId, articleName)
+    })
+  }
+
   const currentIdx = tabList.value.indexOf(activeTab.value)
-  const isLast = currentIdx === tabList.value.length - 1
-
-  // TODO: 接入后端接口保存答案
-  // await api.submitAnswers(currentArticleId.value, answers[currentArticleId.value])
-
-  completedArticles.add(currentArticleId.value)
-
-  if (isLast) {
-    // 全部完成
-    alert('恭喜你完成了所有课文的填空！')
-    goBack()
-  } else {
-    // 切换到下一篇
+  if (currentIdx < tabList.value.length - 1) {
     const nextTab = tabList.value[currentIdx + 1]
     openArticle(nextTab)
   }
-}
-
-// 切换课文标签（手动切换）
-const switchArticleTab = (tabName: string) => {
-  if (tabName === activeTab.value) return
-  openArticle(tabName)
 }
 
 const goBack = () => router.push('/')
@@ -290,7 +296,6 @@ onMounted(() => {
   overflow: hidden;
 }
 
-/* 数字人区域 */
 .digital-human-area {
   position: absolute;
   left: 180px;
@@ -317,7 +322,6 @@ onMounted(() => {
   box-shadow: 0 4px 16px rgba(0,0,0,0.12);
 }
 
-/* 顶部导航栏 */
 .top-nav {
   position: absolute;
   top: 30px;
@@ -339,7 +343,6 @@ onMounted(() => {
   cursor: pointer;
 }
 
-/* 顶部标签栏 */
 .tab-wrapper {
   position: absolute;
   top: 110px;
@@ -365,17 +368,29 @@ onMounted(() => {
   border: 1px solid #ddd;
   transition: all 0.2s;
 }
-.tab-item:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-}
-.tab-item.active {
+.tab-item.tab-completed {
   background: #f7c846;
   color: #fff;
   border-color: #f7c846;
 }
+.tab-item.tab-active {
+  background: #f7c846;
+  color: #fff;
+  border-color: #f7c846;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+.tab-item.tab-locked {
+  background: #d0d0d0;
+  color: #666;
+  border-color: #c5c5c5;
+  cursor: not-allowed;
+}
 
-/* 右侧容器 */
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(247, 200, 70, 0.4); }
+  50% { box-shadow: 0 0 0 8px rgba(247, 200, 70, 0); }
+}
+
 .right-container {
   position: absolute;
   top: 120px;
@@ -387,7 +402,6 @@ onMounted(() => {
   gap: 14px;
 }
 
-/* 右侧白色弹窗 */
 .write-feel-modal {
   width: 100%;
   background: rgba(255, 255, 255, 0.92);
@@ -416,6 +430,12 @@ onMounted(() => {
   line-height: 2;
 }
 
+.completed-item {
+  margin-bottom: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px dashed #e0e0e0;
+}
+
 /* 填空输入框 */
 .fill-input {
   display: inline-block;
@@ -429,7 +449,7 @@ onMounted(() => {
   background: transparent;
   text-align: center;
   outline: none;
-  transition: border-color 0.2s;
+  transition: all 0.3s;
 }
 .fill-input::placeholder {
   color: #a0b4e8;
@@ -439,8 +459,33 @@ onMounted(() => {
   border-bottom-color: #2a53b8;
   border-bottom-width: 2px;
 }
+.fill-input.correct-input {
+  background: #c8f0cc;
+  border-bottom-color: #2a9d3a;
+  color: #2a7d30;
+}
+.fill-input.wrong-input {
+  background: #fef3c7;
+  border-bottom-color: #d97706;
+  color: #b45309;
+}
 
-/* 提交按钮 */
+.answer-box {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin: 0 3px;
+  font-weight: 600;
+}
+.answer-box.correct-box {
+  background: #c8f0cc;
+  color: #2a7d30;
+}
+.answer-box.wrong-box {
+  background: #fef3c7;
+  color: #b45309;
+}
+
 .submit-btn {
   width: 100%;
   height: 52px;
