@@ -23,7 +23,6 @@
 
     <!-- 左侧课文弹窗 -->
     <div class="article-popup" v-if="showArticle">
-      <!-- 课文内容由后端接口渲染，这里只做容器 -->
       <div v-html="articleHtml"></div>
       <button class="top-btn">顶部</button>
     </div>
@@ -33,6 +32,7 @@
       <!-- 步骤1 -->
       <div class="step-item">
         <div class="step-num active">1</div>
+        <div class="step-line" :class="{active: step >= 2}"></div>
         <div class="step-card">
           <p class="step-question">在《赵州桥》的第3自然段里，一个意思指的是：</p>
           <div class="input-box" v-if="step === 1">
@@ -54,7 +54,8 @@
       <!-- 步骤2 -->
       <div class="step-item">
         <div class="step-num" :class="{active: step >= 2}">2</div>
-        <div class="step-card">
+        <div class="step-line" :class="{active: step >= 3}"></div>
+        <div class="step-card" v-if="step >= 2">
           <p class="step-question">根据这一个意思写一句中心句：</p>
           <div class="input-box" v-if="step === 2">
             <input
@@ -75,7 +76,7 @@
       <!-- 步骤3 -->
       <div class="step-item">
         <div class="step-num" :class="{active: step >= 3}">3</div>
-        <div class="step-card">
+        <div class="step-card" v-if="step >= 3">
           <p class="step-question">围绕这中心句，后面每一句话写的内容都跟这个意思有关。可以用上修辞手法，可以用事例或细节来写具体。请你读读中心句后面的句子，体会这种写法。</p>
           <div class="read-box" v-if="step === 3">
             <input class="read-input" readonly placeholder="朗读" />
@@ -98,39 +99,27 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 
-// 控制课文弹窗
 const showArticle = ref(false)
-// 课文html（后端接口返回）
 const articleHtml = ref('')
-
-// 当前步骤：1 / 2 / 3
 const step = ref(1)
-
-// 回答内容
 const answer1 = ref('')
 const answer2 = ref('')
-const hasRead = ref(false) // 是否完成朗读
+const hasRead = ref(false)
 
-// 全部填写完成才点亮完成按钮
 const allFilled = computed(() => {
   return !!answer1.value && !!answer2.value && hasRead.value
 })
 
-// 数字人对话文本
-const talkText = ref('亲爱的某某同学，我们来梳理“围绕一个意思把一段话写清楚”的表达方法吧。')
+const talkText = ref('亲爱的某某同学，我们来梳理"围绕一个意思把一段话写清楚"的表达方法吧。')
 
-// 步骤1提交模拟（后端校验）
 const submitStep1 = () => {
-  // 模拟后端校验正确
   if (answer1.value === '美观') {
     step.value = 2
   } else {
-    // 语音识别错误提示
     answer1.value = ''
   }
 }
 
-// 步骤2提交模拟（后端校验）
 const submitStep2 = () => {
   if (answer2.value === '这座桥不但坚固，而且美观') {
     step.value = 3
@@ -158,7 +147,6 @@ const submitStep2 = () => {
   object-fit: cover;
 }
 
-/* 顶部头部 */
 .header-bar {
   position: absolute;
   top: 12px;
@@ -188,11 +176,10 @@ const submitStep2 = () => {
   cursor: pointer;
 }
 
-/* 数字人区域 */
 .human-wrap {
   position: absolute;
   bottom: 30px;
-  left: 40px;
+  left: 110px;
   z-index: 5;
 }
 .human-img {
@@ -202,7 +189,7 @@ const submitStep2 = () => {
   position: absolute;
   left: 170px;
   top: 10px;
-  background: #fff;
+  background: rgba(132, 131, 131, 0.5);
   padding: 12px 16px;
   border-radius: 12px;
   width: 340px;
@@ -214,7 +201,6 @@ const submitStep2 = () => {
   cursor: pointer;
 }
 
-/* 课文弹窗 */
 .article-popup {
   position: absolute;
   top: 70px;
@@ -238,7 +224,6 @@ const submitStep2 = () => {
   padding: 2px 8px;
 }
 
-/* 右侧分步流程 */
 .step-flow {
   position: absolute;
   top: 70px;
@@ -254,14 +239,17 @@ const submitStep2 = () => {
   gap: 12px;
   position: relative;
 }
-.step-item:not(:last-child)::after {
-  content: '';
+.step-line {
   position: absolute;
-  left: 16px;
+  left: 15px;
   top: 36px;
   width: 2px;
   height: calc(100% + 18px);
-  background: #6098ff;
+  background: #ddd;
+  transition: background 0.3s;
+}
+.step-line.active {
+  background: #3678e8;
 }
 .step-num {
   width: 32px;
@@ -272,6 +260,9 @@ const submitStep2 = () => {
   text-align: center;
   line-height: 32px;
   flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+  transition: background 0.3s, color 0.3s;
 }
 .step-num.active {
   background: #3678e8;
@@ -289,7 +280,6 @@ const submitStep2 = () => {
   margin: 0 0 12px;
 }
 
-/* 输入区域 */
 .input-box {
   display: flex;
   flex-wrap: wrap;
@@ -314,7 +304,6 @@ const submitStep2 = () => {
   margin-left: auto;
 }
 
-/* 答对标签 */
 .answer-result {
   width: 100%;
 }
@@ -331,7 +320,6 @@ const submitStep2 = () => {
   border-radius: 6px;
 }
 
-/* 朗读区域 */
 .read-box {
   display: flex;
   flex-wrap: wrap;
@@ -354,7 +342,6 @@ const submitStep2 = () => {
   padding: 4px 10px;
 }
 
-/* 底部完成按钮 */
 .finish-btn {
   position: absolute;
   bottom: 30px;
