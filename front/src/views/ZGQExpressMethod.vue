@@ -4,7 +4,7 @@
     <div class="header-bar">
       <span class="back-arrow" @click="$router.back()">&lt;</span>
       <h1 class="page-title">学习《赵州桥》的表达方法</h1>
-      <button class="text-btn" @click="showArticle = !showArticle">课文</button>
+      <button class="text-btn" @click="toggleArticle">课文</button>
     </div>
 
     <!-- 背景图 -->
@@ -23,6 +23,7 @@
 
     <!-- 左侧课文弹窗 -->
     <div class="article-popup" v-if="showArticle">
+      <!-- TODO: 后续接入后端接口渲染课文内容 -->
       <div v-html="articleHtml"></div>
       <button class="top-btn">顶部</button>
     </div>
@@ -33,14 +34,24 @@
       <div class="step-item">
         <div class="step-num active">1</div>
         <div class="step-line" :class="{active: step >= 2}"></div>
-        <div class="step-card">
+        <div
+          class="step-card"
+          :class="{
+            'card-correct': status1 === 'correct',
+            'card-wrong': status1 === 'wrong'
+          }"
+        >
           <p class="step-question">在《赵州桥》的第3自然段里，一个意思指的是：</p>
           <div class="input-box" v-if="step === 1">
             <div class="input-with-action">
               <input
                 v-model="answer1"
                 class="input-field"
-                placeholder="点击窗口输入"
+                :class="{
+                  'input-correct': status1 === 'correct',
+                  'input-wrong': status1 === 'wrong'
+                }"
+                :placeholder="status1 === 'wrong' ? '不正确，请重新输入' : '点击窗口输入'"
                 readonly
               />
               <span class="mic-btn">🎤语音</span>
@@ -57,14 +68,25 @@
       <div class="step-item">
         <div class="step-num" :class="{active: step >= 2}">2</div>
         <div class="step-line" :class="{active: step >= 3}"></div>
-        <div class="step-card" v-if="step >= 2">
+        <div
+          class="step-card"
+          v-if="step >= 2"
+          :class="{
+            'card-correct': status2 === 'correct',
+            'card-wrong': status2 === 'wrong'
+          }"
+        >
           <p class="step-question">根据这一个意思写一句中心句：</p>
           <div class="input-box" v-if="step === 2">
             <div class="input-with-action">
               <input
                 v-model="answer2"
                 class="input-field"
-                placeholder="不正确，请重新输入"
+                :class="{
+                  'input-correct': status2 === 'correct',
+                  'input-wrong': status2 === 'wrong'
+                }"
+                :placeholder="status2 === 'wrong' ? '不正确，请重新输入' : '点击窗口输入'"
                 readonly
               />
               <span class="mic-btn">🎤语音</span>
@@ -72,7 +94,7 @@
             <button class="confirm-btn" @click="submitStep2">确定</button>
           </div>
           <div class="answer-result" v-if="step >= 3">
-            <div class="orange-tag">这座桥不但坚固，而且美观</div>
+            <div class="green-tag">这座桥不但坚固，而且美观</div>
           </div>
         </div>
       </div>
@@ -80,7 +102,14 @@
       <!-- 步骤3 -->
       <div class="step-item">
         <div class="step-num" :class="{active: step >= 3}">3</div>
-        <div class="step-card" v-if="step >= 3">
+        <div
+          class="step-card"
+          v-if="step >= 3"
+          :class="{
+            'card-correct': status3 === 'correct',
+            'card-wrong': status3 === 'wrong'
+          }"
+        >
           <p class="step-question">围绕这中心句，后面每一句话写的内容都跟这个意思有关。可以用上修辞手法，可以用事例或细节来写具体。请你读读中心句后面的句子，体会这种写法。</p>
           <div class="read-box" v-if="step === 3">
             <div class="input-with-action">
@@ -112,25 +141,57 @@ const answer1 = ref('')
 const answer2 = ref('')
 const hasRead = ref(false)
 
+// 每个步骤的答题状态：'' 未提交 | 'correct' 正确 | 'wrong' 错误
+const status1 = ref<'' | 'correct' | 'wrong'>('')
+const status2 = ref<'' | 'correct' | 'wrong'>('')
+const status3 = ref<'' | 'correct' | 'wrong'>('')
+
 const allFilled = computed(() => {
   return !!answer1.value && !!answer2.value && hasRead.value
 })
 
 const talkText = ref('亲爱的某某同学，我们来梳理"围绕一个意思把一段话写清楚"的表达方法吧。')
 
-const submitStep1 = () => {
-  if (answer1.value === '美观') {
-    step.value = 2
-  } else {
-    answer1.value = ''
+// 切换课文弹窗
+const toggleArticle = async () => {
+  showArticle.value = !showArticle.value
+  if (showArticle.value && !articleHtml.value) {
+    // TODO: 后续接入后端接口获取课文内容
+    // articleHtml.value = await fetchArticleContent('赵州桥')
   }
 }
 
-const submitStep2 = () => {
+// 步骤1提交（后续对接AI接口校验）
+const submitStep1 = async () => {
+  // TODO: 调用后端接口校验答案，后端返回 correct / wrong
+  // const result = await validateAnswer({ step: 1, answer: answer1.value })
+  // 模拟：回答正确
+  if (answer1.value === '美观') {
+    status1.value = 'correct'
+    step.value = 2
+  } else {
+    status1.value = 'wrong'
+    // 3秒后清空错误提示，允许重新输入
+    setTimeout(() => {
+      status1.value = ''
+      answer1.value = ''
+    }, 1500)
+  }
+}
+
+// 步骤2提交（后续对接AI接口校验）
+const submitStep2 = async () => {
+  // TODO: 调用后端接口校验答案，后端返回 correct / wrong
+  // const result = await validateAnswer({ step: 2, answer: answer2.value })
   if (answer2.value === '这座桥不但坚固，而且美观') {
+    status2.value = 'correct'
     step.value = 3
   } else {
-    answer2.value = ''
+    status2.value = 'wrong'
+    setTimeout(() => {
+      status2.value = ''
+      answer2.value = ''
+    }, 1500)
   }
 }
 </script>
@@ -281,6 +342,15 @@ const submitStep2 = () => {
   padding: 14px;
   width: 100%;
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  transition: background 0.3s, box-shadow 0.3s;
+}
+.step-card.card-correct {
+  background: #e8f5e9;
+  box-shadow: 0 4px 12px rgba(57, 199, 87, 0.25);
+}
+.step-card.card-wrong {
+  background: #fce4ec;
+  box-shadow: 0 4px 12px rgba(233, 30, 99, 0.2);
 }
 .step-question {
   font-size: 14px;
@@ -302,6 +372,20 @@ const submitStep2 = () => {
   border-radius: 6px;
   padding: 8px 60px 8px 10px;
   box-sizing: border-box;
+  transition: border-color 0.3s, background 0.3s, color 0.3s;
+}
+.input-field.input-correct {
+  background: #c8e6c9;
+  border-color: #2e7d32;
+  color: #1b5e20;
+}
+.input-field.input-wrong {
+  background: #fff0f3;
+  border-color: #c2185b;
+  color: #c2185b;
+}
+.input-field.input-wrong::placeholder {
+  color: #c2185b;
 }
 .input-with-action .mic-btn {
   position: absolute;
@@ -326,12 +410,6 @@ const submitStep2 = () => {
 }
 .green-tag {
   background: #39c757;
-  color: white;
-  padding: 6px;
-  border-radius: 6px;
-}
-.orange-tag {
-  background: #ffb039;
   color: white;
   padding: 6px;
   border-radius: 6px;
