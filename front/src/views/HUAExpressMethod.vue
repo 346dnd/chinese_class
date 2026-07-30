@@ -243,11 +243,11 @@ const handleSubmit = async () => {
 .human-wrap {
   position: absolute;
   bottom: 30px;
-  left: 110px;
+  left: 260px;
   z-index: 5;
 }
 .human-img {
-  width: 160px;
+  width: 130px;
 }
 .talk-bubble {
   position: absolute;
