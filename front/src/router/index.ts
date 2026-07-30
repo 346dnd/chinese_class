@@ -27,6 +27,10 @@ const routes = [
   {
     path: '/method/zhaozhouqiao',
     component: () => import('@/views/ZGQExpressMethod.vue'),
+  },
+  {
+    path: '/method/qingming',
+    component: () => import('@/views/HUAExpressMethod.vue'),
   }
 ]
 
