@@ -1,143 +1,111 @@
-<script setup lang="ts">
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { useUserStore } from '@/stores/user'
-import Input from '@/components/base/Input.vue'
-import Button from '@/components/base/Button.vue'
-import Toast from '@/components/base/Toast.vue'
-
-const router = useRouter()
-const userStore = useUserStore()
-
-const studentId = ref('')
-const name = ref('')
-const isLoading = ref(false)
-const showToast = ref(false)
-const toastMessage = ref('')
-
-const login = async () => {
-  if (!studentId.value.trim() || !name.value.trim()) {
-    showToastMessage('请填写完整信息')
-    return
-  }
-
-  isLoading.value = true
-
-  setTimeout(() => {
-    userStore.login(studentId.value.trim(), name.value.trim())
-    router.push('/')
-  }, 500)
-}
-
-const showToastMessage = (msg: string) => {
-  toastMessage.value = msg
-  showToast.value = true
-}
-
-const closeToast = () => {
-  showToast.value = false
-}
-</script>
-
 <template>
-  <div class="login">
-    <div class="login__logo">📚</div>
-    <div class="login__title">数智交互课程</div>
-    <div class="login__subtitle">宣传中华优秀传统文化</div>
-    
-    <div class="login__form">
-      <div class="login__form-group">
-        <label class="login__label">学号</label>
-        <Input
-          v-model="studentId"
-          placeholder="请输入学号"
-          :maxlength="20"
-        />
+  <div class="login-container">
+    <div class="login-card">
+      <h1 class="login-title">语文课堂</h1>
+      <div class="form-group">
+        <label>学号</label>
+        <input v-model="studentId" type="text" placeholder="请输入学号" />
       </div>
-      
-      <div class="login__form-group">
-        <label class="login__label">姓名</label>
-        <Input
-          v-model="name"
-          placeholder="请输入姓名"
-          :maxlength="20"
-        />
+      <div class="form-group">
+        <label>密码</label>
+        <input v-model="password" type="password" placeholder="请输入密码" @keyup.enter="handleLogin" />
       </div>
-      
-      <Button
-        type="primary"
-        size="lg"
-        :loading="isLoading"
-        class="login__submit"
-        @click="login"
-      >
-        登录
-      </Button>
+      <button class="login-btn" @click="handleLogin" :disabled="loading">
+        {{ loading ? '登录中...' : '登 录' }}
+      </button>
     </div>
-    
-    <Toast
-      :show="showToast"
-      :message="toastMessage"
-      type="error"
-      :duration="3000"
-      @close="closeToast"
-    />
   </div>
 </template>
 
+<script setup>
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { login } from '../stores/user'
+
+const router = useRouter()
+
+const studentId = ref('')
+const password = ref('')
+const loading = ref(false)
+
+const handleLogin = () => {
+  if (!studentId.value || !password.value) {
+    alert('请输入学号和密码')
+    return
+  }
+  loading.value = true
+  const success = login(studentId.value, password.value)
+  loading.value = false
+  if (success) {
+    router.push('/')
+  } else {
+    alert('登录失败，请重试')
+  }
+}
+</script>
+
 <style scoped>
-.login {
-  min-height: 100vh;
+.login-container {
+  width: 100vw;
+  height: 100vh;
   display: flex;
-  flex-direction: column;
-  align-items: center;
   justify-content: center;
-  padding: 20px;
+  align-items: center;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
-
-.login__logo {
-  font-size: 80px;
-  margin-bottom: 20px;
-}
-
-.login__title {
-  font-size: 36px;
-  font-weight: bold;
-  color: #fff;
-  margin-bottom: 8px;
-}
-
-.login__subtitle {
-  font-size: 18px;
-  color: rgba(255, 255, 255, 0.8);
-  margin-bottom: 40px;
-}
-
-.login__form {
-  width: 100%;
-  max-width: 400px;
+.login-card {
   background: #fff;
-  border-radius: 20px;
-  padding: 40px;
+  border-radius: 16px;
+  padding: 40px 36px;
+  width: 360px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
 }
-
-.login__form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 24px;
-}
-
-.login__label {
-  font-size: 16px;
-  font-weight: bold;
+.login-title {
+  text-align: center;
+  margin: 0 0 28px;
+  font-size: 26px;
   color: #333;
 }
-
-.login__submit {
+.form-group {
+  margin-bottom: 18px;
+}
+.form-group label {
+  display: block;
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 6px;
+}
+.form-group input {
   width: 100%;
-  margin-top: 12px;
+  height: 44px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 0 14px;
+  font-size: 15px;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.3s;
+}
+.form-group input:focus {
+  border-color: #667eea;
+}
+.login-btn {
+  width: 100%;
+  height: 48px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: opacity 0.3s;
+}
+.login-btn:hover:not(:disabled) {
+  opacity: 0.9;
+}
+.login-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 </style>

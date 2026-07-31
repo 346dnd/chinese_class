@@ -1,22 +1,21 @@
-# Dependencies
-node_modules/
-dist/
+# 前端依赖和打包产物
+front/node_modules
+front/dist
+front/.vite
 
-# Build output
-*.local
+# 后端编译产物
+back/bin
+back/*.exe
+back/vendor
 
-# Editor directories
-.vscode/
-.idea/
-
-# OS files
+# 编辑器和系统文件
+.vscode
+.idea
 .DS_Store
 Thumbs.db
 
-# Logs
+# 本地配置、密钥、日志
 *.log
-npm-debug.log*
-
-# Environment
 .env
 .env.local
+back/config/*.local.yaml

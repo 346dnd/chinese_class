@@ -1,25 +1,26 @@
 {
   "name": "edu-chinese-classroom",
   "version": "1.0.0",
-  "description": "数智交互课程包 - 前端",
+  "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vue-tsc && vite build",
+    "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview"
   },
   "dependencies": {
-    "vue": "^3.4.0",
-    "vue-router": "^4.4.0",
-    "pinia": "^2.1.7",
     "axios": "^1.6.0",
-    "dayjs": "^1.11.10"
+    "dayjs": "^1.11.10",
+    "pinia": "^2.1.7",
+    "vue": "^3.4.0",
+    "vue-router": "^4.4.0"
   },
   "devDependencies": {
+    "@types/node": "^26.1.2",
     "@vitejs/plugin-vue": "^5.0.0",
+    "sass": "^1.70.0",
     "typescript": "^5.3.0",
-    "vue-tsc": "^2.1.4",
     "vite": "^5.0.0",
-    "sass": "^1.70.0"
+    "vue-tsc": "^2.1.4"
   }
 }

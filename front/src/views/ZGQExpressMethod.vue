@@ -18,12 +18,12 @@
       <div class="talk-bubble" v-if="talkText">
         {{ talkText }}
         <span class="voice-btn">🔊</span>
+        <span class="bubble-arrow"></span>
       </div>
     </div>
 
     <!-- 左侧课文弹窗 -->
     <div class="article-popup" v-if="showArticle">
-      <!-- TODO: 后续接入后端接口渲染课文内容 -->
       <div v-html="articleHtml"></div>
       <button class="top-btn">顶部</button>
     </div>
@@ -41,7 +41,7 @@
             'card-wrong': status1 === 'wrong'
           }"
         >
-          <p class="step-question">在《赵州桥》的第3自然段里，一个意思指的是：</p>
+          <p class="step-question">{{ steps[0]?.question }}</p>
           <div class="input-box" v-if="step === 1">
             <div class="input-with-action">
               <input
@@ -59,7 +59,7 @@
             <button class="confirm-btn" @click="submitStep1">确定</button>
           </div>
           <div class="answer-result" v-if="step >= 2">
-            <div class="green-tag">美观</div>
+            <div class="green-tag">{{ steps[0]?.correctAnswer }}</div>
           </div>
         </div>
       </div>
@@ -76,7 +76,7 @@
             'card-wrong': status2 === 'wrong'
           }"
         >
-          <p class="step-question">根据这一个意思写一句中心句：</p>
+          <p class="step-question">{{ steps[1]?.question }}</p>
           <div class="input-box" v-if="step === 2">
             <div class="input-with-action">
               <input
@@ -94,7 +94,7 @@
             <button class="confirm-btn" @click="submitStep2">确定</button>
           </div>
           <div class="answer-result" v-if="step >= 3">
-            <div class="green-tag">这座桥不但坚固，而且美观</div>
+            <div class="green-tag">{{ steps[1]?.correctAnswer }}</div>
           </div>
         </div>
       </div>
@@ -110,7 +110,7 @@
             'card-wrong': status3 === 'wrong'
           }"
         >
-          <p class="step-question">围绕这中心句，后面每一句话写的内容都跟这个意思有关。可以用上修辞手法，可以用事例或细节来写具体。请你读读中心句后面的句子，体会这种写法。</p>
+          <p class="step-question">{{ steps[2]?.question }}</p>
           <div class="read-box" v-if="step === 3">
             <div class="input-with-action">
               <input class="read-input" readonly placeholder="朗读" />
@@ -131,47 +131,52 @@
   </div>
 </template>
 
-<script setup lang="ts">
-import { ref, computed } from 'vue'
+<script setup>
+import { ref, computed, onMounted } from 'vue'
 
 const showArticle = ref(false)
-const articleHtml = ref('')
+const articleHtml = ref(`赵州桥，又称安济桥，位于河北省石家庄市。<br>赵州桥建于隋朝年间，由著名匠师李春设计建造，距今已有1400多年的历史。<br>赵州桥的桥洞不是普通的半圆形，而是像一张弓。<br>赵州桥非常雄伟。桥长五十多米，有九米多宽。<br>赵州桥体现了劳动人民的智慧和才干，是我国宝贵的历史文化遗产。`)
+
 const step = ref(1)
 const answer1 = ref('')
 const answer2 = ref('')
 const hasRead = ref(false)
 
-// 每个步骤的答题状态：'' 未提交 | 'correct' 正确 | 'wrong' 错误
-const status1 = ref<'' | 'correct' | 'wrong'>('')
-const status2 = ref<'' | 'correct' | 'wrong'>('')
-const status3 = ref<'' | 'correct' | 'wrong'>('')
+const steps = ref([
+  { step: 1, question: '在《赵州桥》的第3自然段里，一个意思指的是：', correctAnswer: '美观' },
+  { step: 2, question: '根据这一个意思写一句中心句：', correctAnswer: '这座桥不但坚固，而且美观' },
+  { step: 3, question: '围绕这中心句，后面每一句话写的内容都跟这个意思有关。可以用上修辞手法，可以用事例或细节来写具体。请你读读中心句后面的句子，体会这种写法。', correctAnswer: '' }
+])
+
+const status1 = ref('')
+const status2 = ref('')
+const status3 = ref('')
 
 const allFilled = computed(() => {
   return !!answer1.value && !!answer2.value && hasRead.value
 })
 
-const talkText = ref('亲爱的某某同学，我们来梳理"围绕一个意思把一段话写清楚"的表达方法吧。')
+const talkText = ref('')
 
-// 切换课文弹窗
-const toggleArticle = async () => {
-  showArticle.value = !showArticle.value
-  if (showArticle.value && !articleHtml.value) {
-    // TODO: 后续接入后端接口获取课文内容
-    // articleHtml.value = await fetchArticleContent('赵州桥')
-  }
+const loadTalkText = async () => {
+  talkText.value = '亲爱的某某同学，我们来梳理"围绕一个意思把一段话写清楚"的表达方法吧。'
 }
 
-// 步骤1提交（后续对接AI接口校验）
-const submitStep1 = async () => {
-  // TODO: 调用后端接口校验答案，后端返回 correct / wrong
-  // const result = await validateAnswer({ step: 1, answer: answer1.value })
-  // 模拟：回答正确
-  if (answer1.value === '美观') {
+onMounted(() => {
+  loadTalkText()
+})
+
+const toggleArticle = () => {
+  showArticle.value = !showArticle.value
+}
+
+const submitStep1 = () => {
+  const correctAnswer = steps.value[0]?.correctAnswer || ''
+  if (answer1.value.trim() === correctAnswer) {
     status1.value = 'correct'
     step.value = 2
   } else {
     status1.value = 'wrong'
-    // 3秒后清空错误提示，允许重新输入
     setTimeout(() => {
       status1.value = ''
       answer1.value = ''
@@ -179,11 +184,9 @@ const submitStep1 = async () => {
   }
 }
 
-// 步骤2提交（后续对接AI接口校验）
-const submitStep2 = async () => {
-  // TODO: 调用后端接口校验答案，后端返回 correct / wrong
-  // const result = await validateAnswer({ step: 2, answer: answer2.value })
-  if (answer2.value === '这座桥不但坚固，而且美观') {
+const submitStep2 = () => {
+  const correctAnswer = steps.value[1]?.correctAnswer || ''
+  if (answer2.value.trim() === correctAnswer) {
     status2.value = 'correct'
     step.value = 3
   } else {
@@ -264,6 +267,17 @@ const submitStep2 = async () => {
   color: #fff;
   line-height: 1.6;
 }
+.bubble-arrow {
+  position: absolute;
+  left: -10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-top: 8px solid transparent;
+  border-bottom: 8px solid transparent;
+  border-right: 10px solid rgba(59, 58, 58, 0.5);
+}
 .voice-btn {
   margin-left: 6px;
   cursor: pointer;
@@ -276,7 +290,7 @@ const submitStep2 = async () => {
   width: 520px;
   max-height: 75vh;
   overflow-y: auto;
-  background: #fff;
+  background: rgba(255, 255, 255, 0.5);
   border-radius: 12px;
   padding: 16px;
   z-index: 20;

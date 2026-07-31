@@ -1,17 +1,23 @@
-<script setup lang="ts">
-import { onMounted } from 'vue'
-import { useUserStore } from '@/stores/user'
-
-const userStore = useUserStore()
-
-onMounted(() => {
-  userStore.loadFromStorage()
-})
-</script>
-
 <template>
   <router-view />
 </template>
 
-<style scoped>
+<script setup>
+</script>
+
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+html, body {
+  width: 100%;
+  height: 100%;
+  font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+}
+#app {
+  width: 100%;
+  height: 100%;
+}
 </style>

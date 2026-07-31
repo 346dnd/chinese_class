@@ -18,121 +18,61 @@
       <div class="talk-bubble" v-if="talkText">
         {{ talkText }}
         <span class="voice-btn">🔊</span>
+        <span class="bubble-arrow"></span>
       </div>
     </div>
 
     <!-- 左侧课文弹窗 -->
     <div class="article-popup" v-if="showArticle">
-      <!-- TODO: 后续接入后端接口渲染课文内容 -->
       <div v-html="articleHtml"></div>
       <button class="top-btn">顶部</button>
     </div>
 
-    <!-- 右侧表单卡片 -->
+    <!-- 右侧白色表单卡片 -->
     <div class="right-form-card">
-      <p class="form-title">请仔细阅读《一幅名扬中外的画》第3自然段，思考作者描写的思路，在对应的空格中填入文字。</p>
-
-      <!-- 第1行输入项 -->
-      <div
-        class="form-item"
-        :class="{
-          'item-correct': status1 === 'correct',
-          'item-wrong': status1 === 'wrong'
-        }"
-      >
-        <label class="item-label">怎么写</label>
-        <div class="input-row">
-          <div class="input-with-action">
-            <input
-              v-model="answer1"
-              class="input-field"
-              :class="{
-                'input-correct': status1 === 'correct',
-                'input-wrong': status1 === 'wrong'
-              }"
-              :placeholder="status1 === 'wrong' ? '不正确，请重新输入' : '点击窗口输入'"
-              readonly
-            />
-            <span class="mic-btn">🎤语音</span>
-          </div>
-          <span class="text-desc">《一幅名扬中外的画》第3自然段</span>
+      <!-- 两列表格 -->
+      <div class="table-wrapper">
+        <!-- 表头 -->
+        <div class="table-header">
+          <div class="col-left-header">怎么写</div>
+          <div class="col-right-header">《一幅名扬中外的画》第3自然段</div>
         </div>
-      </div>
 
-      <!-- 第2行输入项 -->
-      <div
-        class="form-item"
-        :class="{
-          'item-correct': status2 === 'correct',
-          'item-wrong': status2 === 'wrong'
-        }"
-      >
-        <label class="item-label">①先确定一个意思。</label>
-        <div class="input-row">
-          <div class="input-with-action">
-            <input
-              v-model="answer2"
-              class="input-field"
-              :class="{
-                'input-correct': status2 === 'correct',
-                'input-wrong': status2 === 'wrong'
-              }"
-              :placeholder="status2 === 'wrong' ? '不正确，请重新输入' : '点击窗口输入'"
-              readonly
-            />
-            <span class="mic-btn">🎤语音</span>
+        <!-- 数据行 -->
+        <div
+          v-for="(question, idx) in questions"
+          :key="idx"
+          class="table-row"
+        >
+          <div
+            class="col-left"
+            :class="{
+              'col-left-correct': statusList[idx] === 'correct',
+              'col-left-wrong': statusList[idx] === 'wrong'
+            }"
+          >
+            <span class="question-text">{{ question.label }}</span>
           </div>
-        </div>
-      </div>
-
-      <!-- 第3行输入项 -->
-      <div
-        class="form-item"
-        :class="{
-          'item-correct': status3 === 'correct',
-          'item-wrong': status3 === 'wrong'
-        }"
-      >
-        <label class="item-label">②根据这个意思写一句中心句。</label>
-        <div class="input-row">
-          <div class="input-with-action">
-            <input
-              v-model="answer3"
-              class="input-field"
-              :class="{
-                'input-correct': status3 === 'correct',
-                'input-wrong': status3 === 'wrong'
-              }"
-              :placeholder="status3 === 'wrong' ? '不正确，请重新输入' : '点击窗口输入'"
-              readonly
-            />
-            <span class="mic-btn">🎤语音</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- 第4行输入项 -->
-      <div
-        class="form-item"
-        :class="{
-          'item-correct': status4 === 'correct',
-          'item-wrong': status4 === 'wrong'
-        }"
-      >
-        <label class="item-label">③围绕中心句，后面每一句话写的内容都跟这个意思有关。可以用上修辞手法，可以用事例或细节把内容写具体。</label>
-        <div class="input-row">
-          <div class="input-with-action">
-            <input
-              v-model="answer4"
-              class="input-field"
-              :class="{
-                'input-correct': status4 === 'correct',
-                'input-wrong': status4 === 'wrong'
-              }"
-              :placeholder="status4 === 'wrong' ? '不正确，请重新输入' : '点击窗口输入'"
-              readonly
-            />
-            <span class="mic-btn">🎤语音</span>
+          <div
+            class="col-right"
+            :class="{
+              'col-right-correct': statusList[idx] === 'correct',
+              'col-right-wrong': statusList[idx] === 'wrong'
+            }"
+          >
+            <div class="input-with-action">
+              <input
+                v-model="answers[idx]"
+                class="input-field"
+                :class="{
+                  'input-correct': statusList[idx] === 'correct',
+                  'input-wrong': statusList[idx] === 'wrong'
+                }"
+                :placeholder="statusList[idx] === 'wrong' ? '不正确，请重新输入' : '点击窗口输入'"
+                readonly
+              />
+              <span class="mic-btn">🎤语音</span>
+            </div>
           </div>
         </div>
       </div>
@@ -145,51 +85,42 @@
   </div>
 </template>
 
-<script setup lang="ts">
-import { ref, computed } from 'vue'
+<script setup>
+import { ref, computed, onMounted } from 'vue'
 
 const showArticle = ref(false)
-const articleHtml = ref('')
+const articleHtml = ref(`《清明上河图》是北宋画家张择端画的一幅画。<br>这幅画描绘了北宋都城汴京的热闹景象。<br>画面上的人物很多，有农民、船工、商人、读书人，还有骑着毛驴的、推着小车的……<br>街上有挂着各种招牌的店铺，有热闹的街市，有横跨汴河的大桥。<br>这幅画已经名扬中外，让人看到了八百多年前古都的风貌。`)
 
-// 四项填写内容
-const answer1 = ref('')
-const answer2 = ref('')
-const answer3 = ref('')
-const answer4 = ref('')
+const questions = ref([
+  { label: '①先确定一个意思。' },
+  { label: '②根据这个意思写一句中心句。' },
+  { label: '③围绕中心句，后面每一句话写的内容都跟这个意思有关。可以用上修辞手法，可以用事例或细节把内容写具体。' }
+])
 
-// 每个题目的答题状态：'' 未提交 | 'correct' 正确 | 'wrong' 错误
-const status1 = ref<'' | 'correct' | 'wrong'>('')
-const status2 = ref<'' | 'correct' | 'wrong'>('')
-const status3 = ref<'' | 'correct' | 'wrong'>('')
-const status4 = ref<'' | 'correct' | 'wrong'>('')
+const answers = ref(['', '', ''])
 
-// 全部输入完成才解除按钮置灰
+const statusList = ref(['', '', ''])
+
 const allFilled = computed(() => {
-  return !!answer1.value && !!answer2.value && !!answer3.value && !!answer4.value
+  return answers.value.every(a => !!a)
 })
 
-const talkText = ref('亲爱的某某同学，我们来梳理"围绕一个意思把一段话写清楚"的表达方法吧。')
+const talkText = ref('')
 
-// 切换课文弹窗
-const toggleArticle = async () => {
-  showArticle.value = !showArticle.value
-  if (showArticle.value && !articleHtml.value) {
-    // TODO: 后续接入后端接口获取课文内容
-    // articleHtml.value = await fetchArticleContent('一幅名扬中外的画')
-  }
+const loadTalkText = async () => {
+  talkText.value = '亲爱的某某同学，我们来梳理"围绕一个意思把一段话写清楚"的表达方法吧。'
 }
 
-// 提交后逐项校验（后续对接AI接口）
-const handleSubmit = async () => {
-  // TODO: 调用后端接口批量校验所有答案
-  // const results = await validateAllAnswers({ answer1, answer2, answer3, answer4 })
-  // 此处为模拟逻辑：答案非空即正确
-  const validate = (val: string) => val.trim().length > 0
+onMounted(() => {
+  loadTalkText()
+})
 
-  status1.value = validate(answer1.value) ? 'correct' : 'wrong'
-  status2.value = validate(answer2.value) ? 'correct' : 'wrong'
-  status3.value = validate(answer3.value) ? 'correct' : 'wrong'
-  status4.value = validate(answer4.value) ? 'correct' : 'wrong'
+const toggleArticle = () => {
+  showArticle.value = !showArticle.value
+}
+
+const handleSubmit = () => {
+  statusList.value = answers.value.map(a => a.trim().length > 0 ? 'correct' : 'wrong')
 }
 </script>
 
@@ -261,6 +192,17 @@ const handleSubmit = async () => {
   color: #fff;
   line-height: 1.6;
 }
+.bubble-arrow {
+  position: absolute;
+  left: -10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-top: 8px solid transparent;
+  border-bottom: 8px solid transparent;
+  border-right: 10px solid rgba(59, 58, 58, 0.5);
+}
 .voice-btn {
   margin-left: 6px;
   cursor: pointer;
@@ -273,7 +215,7 @@ const handleSubmit = async () => {
   width: 520px;
   max-height: 75vh;
   overflow-y: auto;
-  background: #fff;
+  background: rgba(255, 255, 255, 0.5);
   border-radius: 12px;
   padding: 16px;
   z-index: 20;
@@ -294,57 +236,119 @@ const handleSubmit = async () => {
   position: absolute;
   top: 60px;
   right: 20px;
-  width: 360px;
+  width: 480px;
   background: #ffffff;
   border-radius: 16px;
-  padding: 20px;
+  padding: 18px 20px;
   box-shadow: 0 6px 16px rgba(0,0,0,0.12);
   z-index: 10;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
 }
-.form-title {
-  font-size: 13px;
-  color: #333;
-  margin: 0 0 8px;
-  line-height: 1.5;
-}
-.form-item {
+
+.table-wrapper {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 8px 10px;
-  border-radius: 10px;
-  transition: background 0.3s;
+  gap: 8px;
 }
-.form-item.item-correct {
-  background: #e8f5e9;
+
+.table-header {
+  display: flex;
+  gap: 8px;
 }
-.form-item.item-wrong {
-  background: #fce4ec;
-}
-.item-label {
+.table-header .col-left-header {
+  flex: 1;
+  background: #d5e5fa;
+  border-radius: 8px;
+  padding: 10px 12px;
   font-size: 14px;
-  color: #222;
+  font-weight: 600;
+  color: #060606ff;
+  text-align: center;
 }
-.input-row {
+.table-header .col-right-header {
+  flex: 2;
+  background: #d5e5fa;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #121213ff;
+}
+
+/* 核心行布局 */
+.table-row {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.table-row .col-left {
+  flex: 1;
+  background: #2578e4ff;
+  border-radius: 8px;
+  padding: 10px 12px;
   display: flex;
   align-items: center;
-  gap: 10px;
+  transition: background 0.3s;
 }
+.table-row .col-right {
+  flex: 2;
+  border-radius: 8px;
+  /* 重点：移除上下padding！！不要在这里加内边距 */
+  overflow: visible;
+  display: flex;
+  align-items: center;
+  transition: background 0.3s;
+}
+
+.col-left.col-left-correct {
+  background: #4af364ff !important;
+}
+.col-right.col-right-correct {
+  background: #57f06bff !important;
+}
+.col-left.col-left-wrong {
+  background: #f8bbd0 !important;
+}
+.col-right.col-right-wrong {
+  background: #f9bbccff !important;
+}
+
+.question-text {
+  font-size: 13px;
+  color: #f5f7faff;
+  line-height: 1.5;
+}
+.col-left-correct .question-text {
+  color: #1b5e20;
+}
+.col-left-wrong .question-text {
+  color: #880e4f;
+}
+
+/* 输入框 */
 .input-with-action {
   position: relative;
-  flex: 1;
+  width: 100%;
+  height: 100%;
 }
 .input-field {
   width: 100%;
-  border: 1px solid #d0d7e3;
-  border-radius: 6px;
-  padding: 8px 60px 8px 10px;
+  height: 100%;
+  border: 1px solid #689bf5ff;
+  border-radius: 8px;
+  padding: 10px 60px 10px 10px;
   box-sizing: border-box;
   transition: border-color 0.3s, background 0.3s, color 0.3s;
+  background: #fff;
+  outline: none;
 }
+.input-field:focus {
+  border-color: #689bf5ff !important;
+}
+
 .input-field.input-correct {
   background: #c8e6c9;
   border-color: #2e7d32;
@@ -367,11 +371,6 @@ const handleSubmit = async () => {
   cursor: pointer;
   font-size: 13px;
 }
-.text-desc {
-  font-size: 12px;
-  color: #666;
-  white-space: nowrap;
-}
 
 .submit-btn {
   width: 100%;
@@ -382,7 +381,7 @@ const handleSubmit = async () => {
   border-radius: 22px;
   font-size: 16px;
   cursor: pointer;
-  margin-top: 10px;
+  margin-top: 6px;
 }
 .submit-btn:disabled {
   background: #b0c3e8;

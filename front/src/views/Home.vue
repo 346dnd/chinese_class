@@ -1,10 +1,9 @@
-<script setup lang="ts">
+<script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useUserStore } from '@/stores/user'
+import { userState } from '../stores/user'
 
 const router = useRouter()
-const userStore = useUserStore()
 
 const stageModules = ref([
   {
@@ -12,8 +11,8 @@ const stageModules = ref([
     name: '项目策划会',
     color: '#F7D76B',
     tasks: [
-      { id: 'write-feel', name: '写写感想', active: true, finished: false },
-      { id: 'fill-blank', name: '初步感悟', active: false, finished: false }
+      { id: 'write-feel', name: '写写感想', active: true, finished: false, path: '/preview/write-feel' },
+      { id: 'fill-blank', name: '初步感悟', active: false, finished: false, path: '/preview/fill-blank' }
     ]
   },
   {
@@ -21,7 +20,7 @@ const stageModules = ref([
     name: '素材采风：纸的逆袭',
     color: '#EDF5E6',
     tasks: [
-      { id: 'warmup-game', name: '重温文化互动', active: false, finished: false }
+      { id: 'warmup-game', name: '重温文化互动', active: false, finished: false, path: '/warmup' }
     ]
   },
   {
@@ -29,16 +28,16 @@ const stageModules = ref([
     name: '编剧大师课',
     color: '#EDF5E6',
     tasks: [
-      { id: 'zhaozhouqiao', name: '学习《赵州桥》的表达方法', active: false, finished: false },
-      { id: 'qingming', name: '学习《一幅名扬中外的画》的表达方法', active: false, finished: false }
+      { id: 'zhaozhouqiao', name: '学习《赵州桥》的表达方法', active: false, finished: false, path: '/method/zhaozhouqiao' },
+      { id: 'qingming', name: '学习《一幅名扬中外的画》的表达方法', active: false, finished: false, path: '/method/qingming' }
     ]
   },
   {
     id: 'creation',
     name: '节目制作工坊',
-    color: '#EDF5E6',
+    color: '#293320ff',
     tasks: [
-      { id: 'creation-main', name: '宣传文化创作', active: false, finished: false }
+      { id: 'creation-main', name: '宣传文化创作', active: false, finished: false, path: '/creation' }
     ]
   },
   {
@@ -46,42 +45,32 @@ const stageModules = ref([
     name: '下期预告',
     color: '#EDF5E6',
     tasks: [
-      { id: 'homework-main', name: '传承文化任务', active: false, finished: false }
+      { id: 'homework-main', name: '传承文化任务', active: false, finished: false, path: '/homework' }
     ]
   }
 ])
 
-const currentStageId = ref<string | null>(null)
+const currentStageId = ref(null)
 
-const selectStage = (stageId: string) => {
+const selectStage = (stageId) => {
   currentStageId.value = currentStageId.value === stageId ? null : stageId
 }
 
-const selectTask = (stageId: string, taskId: string) => {
-  // 任务ID到路由的映射
-  const routeMap: Record<string, string> = {
-    'write-feel': '/preview/write-feel',
-    'fill-blank': '/preview/fill-blank',
-    'zhaozhouqiao': '/method/zhaozhouqiao',
-    'qingming': '/method/qingming'
-  }
-  const targetRoute = routeMap[taskId] || `/${stageId}`
-  router.push(targetRoute)
+const selectTask = (task) => {
+  router.push(task.path)
 }
 
-// 原有函数完全不动，只给preview使用
 const currentTasks = () => {
   if (currentStageId.value !== 'preview') return []
   return stageModules.value.find(item => item.id === 'preview')?.tasks || []
 }
 
-// 新增：获取编剧大师课任务
 const methodTasks = () => {
   return stageModules.value.find(item => item.id === 'method')?.tasks || []
 }
 
 onMounted(() => {
-  if (!userStore.isLoggedIn) {
+  if (!userState.isLoggedIn) {
     router.push('/login')
   }
 })
@@ -115,7 +104,7 @@ onMounted(() => {
             :key="task.id"
             class="task-popup-item"
             :class="{ 'is-active': task.active, 'task-finished': task.finished }"
-            @click="selectTask('preview', task.id)"
+            @click="selectTask(task)"
           >
             {{ task.name }}
           </div>
@@ -134,7 +123,7 @@ onMounted(() => {
             :key="task.id"
             class="method-popup-item"
             :class="{ 'task-finished': task.finished }"
-            @click="selectTask('method', task.id)"
+            @click="selectTask(task)"
           >
             <span>⇨</span>
             {{ task.name }}
