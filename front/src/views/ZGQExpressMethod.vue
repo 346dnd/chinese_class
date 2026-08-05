@@ -1,20 +1,34 @@
 <template>
   <div class="page-container">
-    <!-- 顶部标题栏 -->
-    <div class="header-bar">
-      <span class="back-arrow" @click="$router.back()">&lt;</span>
-      <h1 class="page-title">学习《赵州桥》的表达方法</h1>
-      <button class="text-btn" @click="toggleArticle">课文</button>
+    <!-- ✅ 完全替换为写写感想的顶部导航栏 -->
+    <div class="top-nav">
+      <span class="back-icon" @click="$router.back()">&lt;</span>
+      <span class="nav-title">学习《赵州桥》的表达方法</span>
+      <div class="top-nav-buttons">
+        <div class="nav-btn">
+          <img src="/image/语音 1.png" alt="语音播报" class="btn-icon" />
+          开启语音
+        </div>
+        <div class="nav-btn">
+          <img src="/image/视频 2.png" alt="回看视频" class="btn-icon" />
+          回看视频
+        </div>
+      </div>
     </div>
 
-    <!-- 背景图 -->
+    <!-- ✅ 新增课文标签切换tab-wrapper（参考写写感想） -->
+    <div class="tab-wrapper">
+      <div class="tab-item tab-active">赵州桥</div>
+    </div>
+
+    <!-- 背景图【完全保留原有】 -->
     <div class="bg-wrap">
-      <img src="/image 2 .png" alt="背景" class="bg-img" />
+      <img src="/image/image 116.png" alt="背景" class="bg-img" />
     </div>
 
-    <!-- 左侧数字人+对话气泡 -->
+    <!-- 左侧数字人+对话气泡【原样不动】 -->
     <div class="human-wrap">
-      <img src="/罗罗_汉服.psd 1 .png" alt="数字人" class="human-img" />
+      <img src="/image/罗罗_汉服.psd 1 .png" alt="数字人" class="human-img" />
       <div class="talk-bubble" v-if="talkText">
         {{ talkText }}
         <span class="voice-btn">🔊</span>
@@ -22,13 +36,13 @@
       </div>
     </div>
 
-    <!-- 左侧课文弹窗 -->
+    <!-- 左侧课文弹窗【原样不动】 -->
     <div class="article-popup" v-if="showArticle">
       <div v-html="articleHtml"></div>
       <button class="top-btn">顶部</button>
     </div>
 
-    <!-- 右侧分步流程 -->
+    <!-- 右侧分步流程【原样不动】 -->
     <div class="step-flow">
       <!-- 步骤1 -->
       <div class="step-item">
@@ -126,7 +140,7 @@
       </div>
     </div>
 
-    <!-- 底部完成按钮 -->
+    <!-- 底部完成按钮【原样不动】 -->
     <button class="finish-btn" :disabled="!allFilled" v-if="step === 3">完成</button>
   </div>
 </template>
@@ -200,6 +214,90 @@ const submitStep2 = () => {
 </script>
 
 <style scoped>
+/* ========== 顶部导航（复制写写感想） ========== */
+.top-nav {
+  position: absolute;
+  top: 30px;
+  left: 60px;
+  right: 60px;
+  height: 65px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 25px;
+  background: rgba(245, 244, 243, 0.45);
+  border-radius: 12px;
+  color: #4e1b05ed;
+  font-weight: 900;
+  font-size: 25px;
+  z-index: 10;
+}
+.back-icon {
+  font-size: 22px;
+  cursor: pointer;
+}
+.top-nav-buttons {
+  margin-left: auto;
+  display: flex;
+  gap: 12px;
+}
+.nav-btn {
+  width: 120px;
+  height: 35px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 16px;
+  background: rgb(220, 137, 29);
+  color: #fff;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 300;
+  letter-spacing: 1px;
+  box-shadow: 0 2px 4px rgba(118, 117, 117, 0.647);
+  cursor: pointer;
+}
+.btn-icon {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+}
+
+/* ========== 课文标签tab-wrapper（复制写写感想） ========== */
+.tab-wrapper {
+  position: absolute;
+  top: 110px;
+  left: 60px;
+  display: flex;
+  align-items: center;
+  background: rgba(240, 239, 238, 0.2);
+  border-radius: 12px;
+  border: 1px solid rgb(250, 248, 247, 0.5);
+  padding: 6px 14px;
+  gap: 8px;
+  z-index: 10;
+}
+.tab-item {
+  padding: 8px 19px;
+  height: 35px;
+  background: #ffffff;
+  border-radius: 20px;
+  font-size: 20px;
+  font-family: "FZCuKaiS-R-GB", "KaiTi", "STKaiti", 楷体, serif;
+  font-weight: 580;
+  line-height: 19px;
+  letter-spacing: -2px;
+  color: #333;
+  cursor: pointer;
+  border: 1px solid #a29f9f;
+  box-shadow: 0 2px 4px rgba(134, 129, 129, 0.647);
+  transition: all 0.2s;
+}
+.tab-item.tab-active {
+  background: #d27f01;
+  color: #fff;
+  border-color: #d27f01;
+}
 .page-container {
   width: 100vw;
   height: 100vh;

@@ -1,9 +1,19 @@
 <template>
-  <div class="page-container">
-    <!-- 顶部返回导航栏 -->
+  <div class="page-container" :style="pageStyle">
+    <!-- 顶部导航栏 -->
     <div class="top-nav">
       <span class="back-icon" @click="goBack">&lt;</span>
       <span class="nav-title">寻找文化：写写感想</span>
+      <div class="top-nav-buttons">
+        <div class="nav-btn" @click="mockVoice">
+          <img src="/image/语音 1.png" alt="语音播报" class="btn-icon" />
+          开启语音
+        </div>
+        <div class="nav-btn" @click="mockVideo">
+          <img src="/image/视频 2.png" alt="回看视频" class="btn-icon" />
+          回看视频
+        </div>
+      </div>
     </div>
 
     <!-- 课文标签切换 -->
@@ -21,35 +31,39 @@
 
     <!-- 左侧区域：数字人 + 对话框 或 课文内容 -->
     <div class="left-area">
-      <!-- 数字人区域（未打开课文时显示） -->
       <div class="digital-human-area" v-if="currentPanel === 'human'">
         <img
           src="/image/小小_汉服 1.png"
           alt="数字人"
           class="digital-human-img"
         />
-        <div class="human-talk-bubble" v-if="talkText">
-          {{ talkText }}
-          <span class="voice-icon" @click="playAudio(talkText)">🔊</span>
+        <div
+          class="human-talk-bubble"
+          :class="{ expanded: isBubbleExpanded }"
+          v-if="talkText"
+        >
+          <span class="bubble-text">{{ talkText }}</span>
+          <img
+            src="/image/语音朗读.png"
+            alt="播放"
+            class="bubble-voice-icon"
+            @click="playBubbleAudio"
+          />
           <span class="bubble-arrow"></span>
         </div>
 
-        <!-- 完成全部题目后：AI反馈信息对话框 -->
         <div class="completion-feedback-bubble" v-if="isAllCompleted">
           <div class="feedback-message">{{ completionMessage }}</div>
           <span class="bubble-arrow"></span>
         </div>
-        <!-- 完成全部题目后：跳转按钮（宽度与对话框对齐） -->
         <div class="completion-action-bar" v-if="isAllCompleted">
           <button class="completion-action-btn report-btn" @click="goToReport">查看评价</button>
           <button class="completion-action-btn home-btn" @click="goHome">回到首页</button>
         </div>
       </div>
 
-      <!-- 课文关闭按钮（在课文框外右上方，仅打开课文时显示） -->
       <div class="article-close-btn" v-if="currentPanel === 'lesson'" @click="closeArticle">×</div>
 
-      <!-- 课文内容面板（打开课文时显示） -->
       <div class="article-panel" v-if="currentPanel === 'lesson'">
         <div class="article-content">
           <h3 class="article-title">{{ currentTabName }}</h3>
@@ -58,10 +72,24 @@
       </div>
     </div>
 
-    <!-- 右侧答题容器（常驻显示） -->
-    <div class="right-container">
+    <!-- 右侧答题容器 -->
+    <div class="right-container" ref="rightContainerRef">
       <div class="write-feel-modal">
-        <!-- 已完成的题目答案（显示在上方） -->
+        <!-- 固定引导标题始终显示 -->
+        <h3 class="modal-title">
+          写写感想
+          <img
+            src="/image/语音朗读.png"
+            alt="语音"
+            class="title-voice-icon"
+            @click="playAudio(currentGuideText)"
+          />
+        </h3>
+        <p class="guide-desc">
+          这三篇课文都写到了中华优秀传统文化的内容，在《纸的发明》里，是哪些方面让你自豪？《赵州桥》《一幅名扬中外的画》又分别是哪些方面让你自豪？请把特别让你自豪的这些方面写下来，记得都要能够<span class="text-red">联系相应的课文内容</span>和<span class="text-red">生活实际</span>。
+        </p>
+
+        <!-- 已完成的题目 -->
         <div
           v-for="(question, qIdx) in completedQuestions"
           :key="'completed-' + question.id"
@@ -75,54 +103,46 @@
           </div>
         </div>
 
-        <!-- 当前活跃的题目（未完成的第一题） -->
+        <!-- 当前题目 -->
         <div class="current-question-block" v-if="activeQuestionId">
-          <h3 class="modal-title">
-            {{ getQuestionName(activeQuestionId) }}
-            <span class="voice-icon" @click="playAudio(getQuestionText(activeQuestionId))">🔊</span>
-          </h3>
+          <h3 class="question-title">{{ getQuestionName(activeQuestionId) }}</h3>
 
-          <!-- 引导文字 -->
-          <p class="guide-desc">
-            {{ getQuestionText(activeQuestionId) }}
-          </p>
-
-          <!-- 当前题目的历史尝试记录 -->
+          <!-- 历史回答记录（含不合格红色答案） -->
           <div class="history-section" v-if="getHistoryRecords(activeQuestionId).length > 0">
             <div
               v-for="(record, idx) in getHistoryRecords(activeQuestionId)"
               :key="'history-' + idx"
               class="history-item"
             >
-              <div class="history-answer" :class="{ 'history-wrong': !record.isCorrect }">
+              <div
+                class="history-answer-box"
+                :class="record.isCorrect ? 'answer-correct' : 'answer-wrong'"
+              >
                 <span class="answer-label">回答{{ idx + 1 }}：</span>{{ record.answer }}
               </div>
             </div>
           </div>
 
-          <!-- 输入区 -->
           <div class="input-wrapper">
             <div class="feel-input-box">
               <textarea
-                v-model="userInput"
                 class="feel-input"
-                :class="{ 'input-invalid': currentSubmitStatus === 'wrong' }"
+                v-model="userInput"
+                :class="{
+                  'input-invalid': currentSubmitStatus === 'wrong',
+                  'has-content': userInput.trim(),
+                  'text-red': currentSubmitStatus === 'wrong'
+                }"
                 placeholder="输入你的感想..."
               ></textarea>
               <div class="func-btn-group">
-                <button
-                  class="func-btn"
-                  @click="handleVoice"
-                  title="语音输入"
-                >
-                  <span class="func-icon">🎤语音</span>
+                <button class="func-btn" @click="handleVoice">
+                  <img src="/image/矢量 62.png" alt="语音" class="func-icon-img" />
+                  <span class="func-text">语音</span>
                 </button>
-                <button
-                  class="func-btn"
-                  @click="handlePhoto"
-                  title="拍照上传"
-                >
-                  <span class="func-icon">📷拍照</span>
+                <button class="func-btn" @click="handlePhoto">
+                  <img src="/image/矢量 65.png" alt="拍照" class="func-icon-img" />
+                  <span class="func-text">拍照</span>
                 </button>
                 <input
                   ref="photoInputRef"
@@ -135,63 +155,108 @@
               </div>
             </div>
 
-            <!-- 错误提示 -->
             <div class="error-tip" v-if="currentSubmitStatus === 'wrong'">
               请重新输入。已尝试 {{ currentAttempts }}/3 次。
             </div>
 
-          <!-- 参考答案（第3次不合格后显示） -->
-          <div class="reference-answer" v-if="showReferenceAnswer">
-            <div class="ref-label">参考答案：</div>
-            <div class="ref-content">{{ referenceAnswer }}</div>
-          </div>
-
-          <!-- 提交按钮 -->
-          <button
-            class="submit-btn"
-            :disabled="!canSubmit"
-            @click="submitAnswer"
-          >
-            ⇧ 提交
-          </button>
+            <div class="reference-answer" v-if="showReferenceAnswer">
+              <div class="ref-label">参考答案：</div>
+              <div class="ref-content">{{ referenceAnswer }}</div>
+            </div>
           </div>
         </div>
 
-        <!-- 全部完成时的提示 -->
         <div class="all-completed-hint" v-if="isAllCompleted">
           <div class="completed-message">已完成所有题目！</div>
         </div>
       </div>
     </div>
 
-    <!-- 完成三道题后的遮罩层（人物和答题框不被覆盖，z-index更高） -->
+    <!-- 下一篇课文按钮 -->
+    <div
+      class="next-lesson-btn"
+      :class="{ 'gold-bg': userInput.trim() }"
+      :style="{ top: nextBtnTop + 'px' }"
+      @click="handleNextLesson"
+    >
+      <img src="/image/矢量 67.png" alt="箭头" class="btn-arrow-icon" />
+      下一篇课文
+    </div>
+
     <div class="completion-overlay" v-if="isAllCompleted"></div>
   </div>
 </template>
 
-<script setup>
-import { ref, reactive, computed, onMounted, nextTick } from 'vue'
+<script setup lang="ts">
+import { ref, reactive, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
-const photoInputRef = ref(null)
+const photoInputRef = ref<HTMLInputElement | null>(null)
+const rightContainerRef = ref<HTMLElement | null>(null)
 
-// ==================== 题目数据 ====================
+// ========== 自适应缩放 ==========
+const DESIGN_WIDTH = 1920
+const DESIGN_HEIGHT = 1080
+
+const pageStyle = ref({
+  transform: 'scale(1)',
+  transformOrigin: 'top left',
+  width: DESIGN_WIDTH + 'px',
+  height: DESIGN_HEIGHT + 'px',
+  marginLeft: '0px',
+  marginTop: '0px'
+})
+
+const updateScale = () => {
+  const scaleX = window.innerWidth / DESIGN_WIDTH
+  const scaleY = window.innerHeight / DESIGN_HEIGHT
+  pageStyle.value = {
+    transform: `scale(${scaleX}, ${scaleY})`,
+    transformOrigin: 'top left',
+    width: DESIGN_WIDTH + 'px',
+    height: DESIGN_HEIGHT + 'px',
+    marginLeft: '0px',
+    marginTop: '0px'
+  }
+}
+
+// ========== 动态计算按钮位置 ==========
+const nextBtnTop = ref(0)
+const updateNextBtnPosition = () => {
+  nextTick(() => {
+    if (rightContainerRef.value) {
+      const container = rightContainerRef.value
+      const containerTop = container.offsetTop
+      const containerHeight = container.offsetHeight
+      const gap = 18.9 // 0.5cm ≈ 18.9px
+      nextBtnTop.value = containerTop + containerHeight + gap
+    }
+  })
+}
+
+// ========== 气泡折叠 ==========
+const isBubbleExpanded = ref(true)
+
+// ========== 首次自动播放标记 ==========
+const hasAutoPlayed = ref(false)
+
+// ========== 数据定义 ==========
 const tabList = ref([
   { id: 'paper', name: '纸的发明' },
   { id: 'bridge', name: '赵州桥' },
   { id: 'painting', name: '一幅名扬中外的画' }
 ])
 
-const articleContents = {
+const articleContents: Record<string, string> = {
   paper: '《纸的发明》课文内容...',
   bridge: '《赵州桥》课文内容...',
   painting: '《一幅名扬中外的画》课文内容...'
 }
 
-const questionData = {
+const questionData: Record<string, { question: string; referenceAnswer: string }> = {
   paper: {
-    question: '这三篇课文都写到了中华优秀传统文化的内容，在《纸的发明》里，是哪些方面让你自豪？',
+    question: '在《纸的发明》中，是哪些让你感到自豪？',
     referenceAnswer: '纸的发明体现了古代劳动人民的智慧，蔡伦改进造纸术，促进了文化的传播和发展。'
   },
   bridge: {
@@ -204,27 +269,31 @@ const questionData = {
   }
 }
 
-// ==================== 状态管理 ====================
 const currentTabId = ref('paper')
-const currentPanel = ref('human') // 'human' | 'lesson'
+const currentPanel = ref<'human' | 'lesson'>('human')
 const userInput = ref('')
 
-// 每题尝试次数
-const attemptsMap = reactive({ paper: 0, bridge: 0, painting: 0 })
-// 每题是否已通过
-const passedMap = reactive({ paper: false, bridge: false, painting: false })
-// 历史记录
-const historyRecordsMap = reactive({ paper: [], bridge: [], painting: [] })
-// 参考答案显示
-const showReferenceAnswerMap = reactive({ paper: false, bridge: false, painting: false })
-// 学生实际输入记录
-const studentInputsMap = reactive({ paper: [], bridge: [], painting: [] })
+const attemptsMap = reactive<Record<string, number>>({ paper: 0, bridge: 0, painting: 0 })
+const passedMap = reactive<Record<string, boolean>>({ paper: false, bridge: false, painting: false })
+const historyRecordsMap = reactive<Record<string, Array<{ question: string; answer: string; isCorrect: boolean }>>>({
+  paper: [],
+  bridge: [],
+  painting: []
+})
+const showReferenceAnswerMap = reactive<Record<string, boolean>>({ paper: false, bridge: false, painting: false })
+const studentInputsMap = reactive<Record<string, Array<{ answer: string; attempt: number; time: number }>>>({
+  paper: [],
+  bridge: [],
+  painting: []
+})
 
-// 数字人对话
 const talkText = ref('')
-const conversationHistory = ref([]) // [{role:'human'|'student', text}]
+const conversationHistory = ref<Array<{ role: string; text: string }>>([])
 
-// ==================== 计算属性 ====================
+// ========== 引导文字（固定） ==========
+const currentGuideText = '这三篇课文都写到了中华优秀传统文化的内容，在《纸的发明》里，是哪些方面让你自豪？《赵州桥》《一幅名扬中外的画》又分别是哪些方面让你自豪？请把特别让你自豪的这些方面写下来，记得都要能够联系相应的课文内容和生活实际。'
+
+// ========== 计算属性 ==========
 const currentTabName = computed(() => {
   const tab = tabList.value.find(t => t.id === currentTabId.value)
   return tab ? tab.name : ''
@@ -232,24 +301,17 @@ const currentTabName = computed(() => {
 
 const currentArticleContent = computed(() => articleContents[currentTabId.value] || '')
 
-// 当前活跃题目的相关信息（用于输入和显示）
-const questionText = computed(() => activeQuestionId.value ? (questionData[activeQuestionId.value]?.question || '') : '')
-const referenceAnswer = computed(() => activeQuestionId.value ? (questionData[activeQuestionId.value]?.referenceAnswer || '') : '')
+const referenceAnswer = computed(() =>
+  activeQuestionId.value ? (questionData[activeQuestionId.value]?.referenceAnswer || '') : ''
+)
 
-const currentAttempts = computed(() => activeQuestionId.value ? attemptsMap[activeQuestionId.value] : 0)
-const isCurrentCompleted = computed(() => activeQuestionId.value ? passedMap[activeQuestionId.value] : true)
-const showReferenceAnswer = computed(() => activeQuestionId.value ? showReferenceAnswerMap[activeQuestionId.value] : false)
+const currentAttempts = computed(() =>
+  activeQuestionId.value ? attemptsMap[activeQuestionId.value] : 0
+)
 
-const historyRecords = computed(() => activeQuestionId.value ? (historyRecordsMap[activeQuestionId.value] || []) : [])
-
-const currentSubmittedAnswer = computed(() => {
-  if (!activeQuestionId.value) return ''
-  const records = historyRecordsMap[activeQuestionId.value] || []
-  if (records.length > 0) {
-    return records[records.length - 1].answer
-  }
-  return ''
-})
+const showReferenceAnswer = computed(() =>
+  activeQuestionId.value ? showReferenceAnswerMap[activeQuestionId.value] : false
+)
 
 const currentSubmitStatus = computed(() => {
   if (!activeQuestionId.value) return ''
@@ -260,54 +322,41 @@ const currentSubmitStatus = computed(() => {
   return ''
 })
 
-const lastSubmitStatus = computed(() => {
-  if (!activeQuestionId.value) return ''
-  const records = historyRecordsMap[activeQuestionId.value] || []
-  if (records.length > 0) {
-    return records[records.length - 1].isCorrect ? 'correct' : 'wrong'
-  }
-  return ''
-})
+const isAllCompleted = computed(() => tabList.value.every(t => passedMap[t.id]))
 
-const canSubmit = computed(() => {
-  return !!userInput.value.trim() && activeQuestionId.value && !isCurrentCompleted.value
-})
+const completionMessage = computed(() =>
+  conversationHistory.value
+    .filter(c => c.role === 'student')
+    .map(c => c.text)
+    .join('\n')
+)
 
-const isAllCompleted = computed(() => {
-  return tabList.value.every(t => passedMap[t.id])
-})
-
-const completionMessage = computed(() => {
-  return conversationHistory.value.filter(c => c.role === 'student').map(c => c.text).join('\n')
-})
-
-// 获取当前活跃的题目（第一个未完成的）
 const activeQuestionId = computed(() => {
   for (let i = 0; i < tabList.value.length; i++) {
     if (!passedMap[tabList.value[i].id]) {
       return tabList.value[i].id
     }
   }
-  return null // 全部完成
+  return null
 })
 
-// 获取已完成的题目列表（用于显示历史答题记录）
-const completedQuestions = computed(() => {
-  return tabList.value.filter(t => passedMap[t.id] && historyRecordsMap[t.id]?.length > 0)
-})
+const completedQuestions = computed(() =>
+  tabList.value.filter(t => passedMap[t.id] && historyRecordsMap[t.id]?.length > 0)
+)
 
-// ==================== 导航样式 ====================
-const getTabClass = (tabId) => {
+// ========== 方法 ==========
+const getTabClass = (tabId: string) => {
   const idx = tabList.value.findIndex(t => t.id === tabId)
   const isActive = tabId === currentTabId.value
   const isPassed = passedMap[tabId]
-  const isLocked = !isPassed && idx > getFirstUnpassedIndex()
+  const firstUnpassedIdx = getFirstUnpassedIndex()
+  const isLocked = !isPassed && idx > firstUnpassedIdx
 
   return {
     'tab-active': isActive && !isLocked,
     'tab-passed': isPassed,
     'tab-locked': isLocked,
-    'tab-unlocked': !isLocked && !isActive
+    'tab-unlocked': !isLocked && !isActive && !isPassed
   }
 }
 
@@ -318,84 +367,105 @@ const getFirstUnpassedIndex = () => {
   return tabList.value.length
 }
 
-// ==================== 辅助函数（获取题目信息） ====================
-const getQuestionName = (tabId) => {
+const getQuestionName = (tabId: string) => {
   const tab = tabList.value.find(t => t.id === tabId)
   return tab ? tab.name : ''
 }
 
-const getQuestionText = (tabId) => {
-  return questionData[tabId]?.question || ''
-}
+const getQuestionText = (tabId: string) => questionData[tabId]?.question || ''
 
-const getHistoryRecords = (tabId) => {
-  return historyRecordsMap[tabId] || []
-}
+const getHistoryRecords = (tabId: string) => historyRecordsMap[tabId] || []
 
-const getCorrectAnswer = (tabId) => {
+const getCorrectAnswer = (tabId: string) => {
   const records = historyRecordsMap[tabId] || []
   const correctRecord = records.find(r => r.isCorrect)
-  return correctRecord ? correctRecord.answer : (records.length > 0 ? records[records.length - 1].answer : '')
+  return correctRecord
+    ? correctRecord.answer
+    : records.length > 0
+      ? records[records.length - 1].answer
+      : ''
 }
 
-// ==================== 标签点击 ====================
-const handleTabClick = (tabId) => {
+const handleTabClick = (tabId: string) => {
   const idx = tabList.value.findIndex(t => t.id === tabId)
   const firstUnpassedIdx = getFirstUnpassedIndex()
-
-  if (idx > firstUnpassedIdx) return // 锁定，不可点击
+  if (idx > firstUnpassedIdx) return
 
   if (tabId === currentTabId.value) {
-    // 点击当前标签，打开课文（左侧切换为课文面板）
     openArticle()
   } else {
     switchToTab(tabId)
   }
 }
 
-const switchToTab = (tabId) => {
+const switchToTab = (tabId: string) => {
   currentTabId.value = tabId
   userInput.value = ''
   currentPanel.value = 'human'
-  loadTabContent(tabId)
+  updateNextBtnPosition()
+  saveState()
 }
 
-// ==================== 课文面板控制 ====================
 const openArticle = () => {
   currentPanel.value = 'lesson'
 }
 
 const closeArticle = () => {
   currentPanel.value = 'human'
-  // 数字人播报引导语音
-  playAudio(questionText.value)
 }
 
-// ==================== 音频播放 ====================
-let audioContext = null
-const playAudio = (text) => {
+// ========== 音频播放（接口预留） ==========
+const playAudio = (text: string) => {
+  // TODO: 接入真实TTS接口
   console.log('播放语音:', text)
 }
 
-// ==================== 数据初始化 ====================
-const fetchTalkText = async () => {
-  talkText.value = '亲爱的同学，来写写你的感想吧，分享你对中华优秀传统文化的感悟。'
+const playBubbleAudio = () => {
+  // 展开气泡并播放
+  isBubbleExpanded.value = true
+  if (talkText.value) {
+    playAudio(talkText.value)
+  }
 }
 
-// ==================== 答案验证（模拟逻辑） ====================
-const validateAnswer = async (answer, articleId) => {
+// 监听talkText变化，自动折叠旧气泡
+watch(talkText, () => {
+  isBubbleExpanded.value = false
+  // 更新气泡后重算按钮位置
+  updateNextBtnPosition()
+})
+
+// ========== 模拟功能 ==========
+const mockVoice = () => console.log('模拟开启语音')
+const mockVideo = () => console.log('模拟回看视频')
+
+const fetchTalkText = async (articleId: string): Promise<string> => {
+  // TODO: 接入真实接口获取数字人话术
+  const texts: Record<string, string> = {
+    paper: '亲爱的同学，请你来写写感想，分享你对《纸的发明》中让你感到自豪的方面吧。',
+    bridge: '很好！接下来看看《赵州桥》，说说哪些方面让你感到自豪？',
+    painting: '太棒了！最后来看看《一幅名扬中外的画》，哪些细节让你感到自豪呢？'
+  }
+  return texts[articleId] || '来写写你的感想吧，分享你对中华优秀传统文化的感悟。'
+}
+
+const validateAnswer = async (
+  answer: string,
+  articleId: string
+): Promise<{ isCorrect: boolean; feedback: string }> => {
+  // TODO: 接入真实AI评判接口
   return new Promise(resolve => {
     setTimeout(() => {
-      resolve({ isCorrect: answer.trim().length >= 10, feedback: '模拟验证完成' })
+      resolve({
+        isCorrect: answer.trim().length >= 10,
+        feedback: answer.trim().length >= 10 ? '回答合格' : '回答不够详细，请再补充'
+      })
     }, 500)
   })
 }
 
-const submitStudentInput = async (answer, articleId, attempt) => {
-  studentInputsMap[articleId].push({ answer, attempt, time: Date.now() })
-}
-
-const recognizeOCR = async (file) => {
+const recognizeOCR = async (file: File): Promise<string> => {
+  // TODO: 接入真实OCR接口
   return new Promise(resolve => {
     setTimeout(() => {
       resolve('OCR识别结果（请手动修改）')
@@ -403,7 +473,7 @@ const recognizeOCR = async (file) => {
   })
 }
 
-// ==================== 提交答案 ====================
+// ========== 提交答案 ==========
 const submitAnswer = async () => {
   if (!userInput.value.trim()) return
 
@@ -411,17 +481,20 @@ const submitAnswer = async () => {
   if (!articleId) return
 
   attemptsMap[articleId]++
+  const currentAttempt = attemptsMap[articleId]
 
-  // 记录学生输入
-  submitStudentInput(userInput.value, articleId, attemptsMap[articleId])
+  // 记录学生实际输入
+  studentInputsMap[articleId].push({
+    answer: userInput.value,
+    attempt: currentAttempt,
+    time: Date.now()
+  })
 
-  // 验证答案
   const result = await validateAnswer(userInput.value, articleId)
   const isCorrect = result.isCorrect
 
   // 记录历史
-  const records = historyRecordsMap[articleId]
-  records.push({
+  historyRecordsMap[articleId].push({
     question: questionData[articleId].question,
     answer: userInput.value,
     isCorrect
@@ -433,22 +506,63 @@ const submitAnswer = async () => {
   })
 
   if (isCorrect) {
+    // 合格：绿色背景
     passedMap[articleId] = true
-    // 清空输入框，布局会自动显示下一题
     userInput.value = ''
+    showReferenceAnswerMap[articleId] = false
+    saveState()
+    // 自动打开下一篇课文
+    autoAdvanceToNext()
   } else {
-    if (attemptsMap[articleId] >= 3) {
-      // 3次不合格，显示参考答案，标记为完成
+    // 不合格：关闭课文，显示数字人，播报提示
+    currentPanel.value = 'human'
+    const errorMsg = '这次的回答还没有符合要求，请再仔细想一想。'
+    talkText.value = errorMsg
+    playAudio(errorMsg)
+
+    if (currentAttempt >= 3) {
+      // 3次不合格：显示参考答案，自动通过
       showReferenceAnswerMap[articleId] = true
       passedMap[articleId] = true
-      // 清空输入框
       userInput.value = ''
+      saveState()
+      autoAdvanceToNext()
+    } else {
+      saveState()
     }
+  }
+  updateNextBtnPosition()
+}
+
+// ========== 自动推进到下一篇课文 ==========
+const autoAdvanceToNext = () => {
+  const nextId = activeQuestionId.value
+  if (nextId) {
+    currentTabId.value = nextId
+    // 获取新的数字人话术
+    fetchTalkText(nextId).then(text => {
+      talkText.value = text
+      updateNextBtnPosition()
+    })
+  }
+  if (isAllCompleted.value) {
+    talkText.value = '恭喜你完成了所有题目！'
+    updateNextBtnPosition()
   }
 }
 
-// ==================== 功能按钮 ====================
+// ========== 下一篇课文按钮 ==========
+const handleNextLesson = () => {
+  if (!activeQuestionId.value) return
+  if (!passedMap[activeQuestionId.value]) {
+    // 当前题未完成，触发提交
+    submitAnswer()
+  }
+}
+
+// ========== 语音/拍照 ==========
 const handleVoice = () => {
+  // TODO: 接入语音输入接口
   console.log('语音输入')
 }
 
@@ -458,84 +572,183 @@ const handlePhoto = () => {
   }
 }
 
-const onPhotoCapture = async (event) => {
-  const file = event.target.files[0]
+const onPhotoCapture = async (event: Event) => {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
   if (!file) return
-
   const ocrResult = await recognizeOCR(file)
   userInput.value = ocrResult
-
-  // 清空input以便下次选择同一文件
-  event.target.value = ''
+  target.value = ''
 }
 
-// ==================== 加载题目内容 ====================
-const loadTabContent = (tabId) => {
-  // 重置输入状态
-  userInput.value = ''
+// ========== 状态持久化 ==========
+const STORAGE_KEY = 'write-feel-state'
+
+const saveState = () => {
+  const state = {
+    currentTabId: currentTabId.value,
+    currentPanel: currentPanel.value,
+    userInput: userInput.value,
+    attemptsMap: { ...attemptsMap },
+    passedMap: { ...passedMap },
+    historyRecordsMap: JSON.parse(JSON.stringify(historyRecordsMap)),
+    showReferenceAnswerMap: { ...showReferenceAnswerMap },
+    studentInputsMap: JSON.parse(JSON.stringify(studentInputsMap)),
+    talkText: talkText.value,
+    conversationHistory: JSON.parse(JSON.stringify(conversationHistory.value)),
+    hasAutoPlayed: hasAutoPlayed.value
+  }
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
 }
 
-// ==================== 路由跳转 ====================
-const goBack = () => router.push('/')
-
-const goToReport = () => {
-  router.push('/report')
+const restoreState = () => {
+  const saved = localStorage.getItem(STORAGE_KEY)
+  if (!saved) return false
+  try {
+    const state = JSON.parse(saved)
+    currentTabId.value = state.currentTabId || 'paper'
+    currentPanel.value = state.currentPanel || 'human'
+    userInput.value = state.userInput || ''
+    Object.assign(attemptsMap, state.attemptsMap || { paper: 0, bridge: 0, painting: 0 })
+    Object.assign(passedMap, state.passedMap || { paper: false, bridge: false, painting: false })
+    Object.assign(historyRecordsMap, state.historyRecordsMap || { paper: [], bridge: [], painting: [] })
+    Object.assign(showReferenceAnswerMap, state.showReferenceAnswerMap || { paper: false, bridge: false, painting: false })
+    Object.assign(studentInputsMap, state.studentInputsMap || { paper: [], bridge: [], painting: [] })
+    talkText.value = state.talkText || ''
+    conversationHistory.value = state.conversationHistory || []
+    hasAutoPlayed.value = state.hasAutoPlayed || false
+    return true
+  } catch {
+    return false
+  }
 }
 
-const goHome = () => {
+// ========== 导航 ==========
+const goBack = () => {
+  saveState()
   router.push('/')
 }
 
-// ==================== 生命周期 ====================
+const goToReport = () => router.push('/report')
+const goHome = () => {
+  saveState()
+  router.push('/')
+}
+
+// ========== 监听输入变化，实时保存 ==========
+watch(userInput, () => {
+  saveState()
+  updateNextBtnPosition()
+})
+
+// 监听面板内容变化，更新按钮位置
+watch([currentPanel, () => historyRecordsMap[activeQuestionId.value || 'paper']?.length], () => {
+  updateNextBtnPosition()
+}, { deep: true })
+
+// ========== 生命周期 ==========
 onMounted(async () => {
-  await fetchTalkText()
-  // 首次进入自动播放
-  setTimeout(() => {
-    playAudio(talkText.value)
-  }, 500)
+  updateScale()
+  window.addEventListener('resize', updateScale)
+
+  const restored = restoreState()
+
+  if (!restored) {
+    // 全新状态：初始化第一篇课文
+    const firstId = tabList.value[0].id
+    const text = await fetchTalkText(firstId)
+    talkText.value = text
+    // 首次自动播放文字和音频
+    setTimeout(() => {
+      playAudio(text)
+    }, 500)
+    hasAutoPlayed.value = true
+    saveState()
+  } else if (!hasAutoPlayed.value && talkText.value) {
+    // 恢复的状态但未自动播放过
+    setTimeout(() => {
+      playAudio(talkText.value)
+    }, 500)
+    hasAutoPlayed.value = true
+    saveState()
+  }
+
+  updateNextBtnPosition()
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', updateScale)
+  saveState()
 })
 </script>
 
 <style scoped>
 .page-container {
-  width: 100vw;
-  height: 100vh;
-  background: url('/image 110.png') no-repeat center center;
+  width: 1920px;
+  height: 1080px;
+  background: url('/image/image 110.png') no-repeat center center;
   background-size: cover;
   position: relative;
   overflow: hidden;
 }
 
-/* 顶部导航栏 */
+/* ========== 顶部导航 ========== */
 .top-nav {
   position: absolute;
   top: 30px;
-  left: 30px;
-  right: 30px;
-  height: 54px;
+  left: 60px;
+  right: 60px;
+  height: 65px;
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 0 25px;
-  background: rgba(35, 25, 16, 0.45);
+  background: rgba(245, 244, 243, 0.45);
   border-radius: 12px;
-  color: #ffffff;
-  font-size: 18px;
+  color: #4e1b05ed;
+  font-weight: 900;
+  font-size: 25px;
   z-index: 10;
 }
 .back-icon {
   font-size: 22px;
   cursor: pointer;
 }
+.top-nav-buttons {
+  margin-left: auto;
+  display: flex;
+  gap: 12px;
+}
+.nav-btn {
+  width: 120px;
+  height: 35px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 16px;
+  background: rgb(220, 137, 29);
+  color: #fff;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 300;
+  letter-spacing: 1px;
+  box-shadow: 0 2px 4px rgba(118, 117, 117, 0.647);
+  cursor: pointer;
+}
+.btn-icon {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+}
 
-/* 顶部标签栏 */
+/* ========== 课文标签 ========== */
 .tab-wrapper {
   position: absolute;
   top: 110px;
-  left: 40px;
+  left: 60px;
   display: flex;
   align-items: center;
-  background: rgba(240, 239, 238, 0.3);
+  background: rgba(240, 239, 238, 0.2);
   border-radius: 12px;
   border: 1px solid rgb(250, 248, 247, 0.5);
   padding: 6px 14px;
@@ -543,30 +756,34 @@ onMounted(async () => {
   z-index: 10;
 }
 .tab-item {
-  padding: 8px 22px;
-  height: 38px;
+  padding: 8px 19px;
+  height: 35px;
   background: #ffffff;
   border-radius: 20px;
-  font-size: 16px;
-  line-height: 20px;
+  font-size: 20px;
+  font-family: "FZCuKaiS-R-GB", "KaiTi", "STKaiti", 楷体, serif;
+  font-weight: 580;
+  line-height: 19px;
+  letter-spacing: -2px;
   color: #333;
   cursor: pointer;
-  border: 1px solid #ddd;
+  border: 1px solid #a29f9f;
+  box-shadow: 0 2px 4px rgba(134, 129, 129, 0.647);
   transition: all 0.2s;
 }
 .tab-item.tab-active {
-  background: #f7c846;
+  background: #d27f01;
   color: #fff;
-  border-color: #f7c846;
+  border-color: #d27f01;
 }
 .tab-item.tab-passed {
-  background: #f7c846;
+  background: #d27f01;
   color: #fff;
-  border-color: #f7c846;
+  border-color: #d27f01;
 }
 .tab-item.tab-locked {
-  background: #d0d0d0;
-  color: #666;
+  background: #e9e8e8;
+  color: #a19d9d;
   border-color: #c5c5c5;
   cursor: not-allowed;
 }
@@ -576,17 +793,15 @@ onMounted(async () => {
   border-color: #ddd;
 }
 
-/* 左侧区域 */
+/* ========== 左侧区域 ========== */
 .left-area {
   position: absolute;
   top: 170px;
-  left: 40px;
+  left: 60px;
   bottom: 20px;
   width: 500px;
   z-index: 5;
 }
-
-/* 课文关闭按钮（在课文框外右上方） */
 .article-close-btn {
   position: absolute;
   top: -50px;
@@ -600,14 +815,14 @@ onMounted(async () => {
   font-size: 18px;
   cursor: pointer;
   z-index: 6;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   transition: transform 0.2s;
 }
 .article-close-btn:hover {
   transform: scale(1.1);
 }
 
-/* 数字人区域 */
+/* 数字人 */
 .digital-human-area {
   position: absolute;
   left: 80px;
@@ -617,8 +832,10 @@ onMounted(async () => {
   width: 180px;
   height: auto;
   display: block;
-  filter: drop-shadow(0 8px 20px rgba(0,0,0,0.25));
+  filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.25));
 }
+
+/* 气泡 */
 .human-talk-bubble {
   position: absolute;
   left: 190px;
@@ -630,7 +847,27 @@ onMounted(async () => {
   font-size: 15px;
   line-height: 1.6;
   color: #333;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.bubble-text {
+  flex: 1;
+  max-height: 72px; /* 3行 */
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+.human-talk-bubble.expanded .bubble-text {
+  max-height: none;
+}
+.bubble-voice-icon {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  flex-shrink: 0;
+  margin-top: 2px;
+  object-fit: contain;
 }
 .bubble-arrow {
   position: absolute;
@@ -643,11 +880,6 @@ onMounted(async () => {
   border-bottom: 8px solid transparent;
   border-right: 10px solid #fff;
 }
-.voice-icon {
-  font-size: 16px;
-  cursor: pointer;
-  margin-left: 6px;
-}
 
 /* 课文面板 */
 .article-panel {
@@ -656,7 +888,7 @@ onMounted(async () => {
   background: rgba(255, 255, 255, 0.8);
   border-radius: 18px;
   padding: 20px 24px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
   box-sizing: border-box;
   overflow-y: auto;
   display: flex;
@@ -675,32 +907,51 @@ onMounted(async () => {
   line-height: 1.8;
   color: #444;
 }
-.panel-actions {
-  margin-top: 12px;
-  text-align: right;
-}
-.panel-btn {
-  padding: 6px 14px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 14px;
-}
-.close-btn {
-  background: #3668e8;
-  color: #fff;
-}
 
-/* 右侧容器（常驻答题框） */
+/* ========== 右侧面板 ========== */
 .right-container {
   position: absolute;
   top: 170px;
-  right: 30px;
+  right: 70px;
   width: 580px;
   z-index: 10;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 18px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  padding: 20px 24px;
+  box-sizing: border-box;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
 }
 
-/* 已完成题目的答案块 */
+/* 固定标题 */
+.modal-title {
+  font-size: 22px;
+  font-weight: 600;
+  color: #111;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.title-voice-icon {
+  width: 22px;
+  height: 22px;
+  cursor: pointer;
+  object-fit: contain;
+}
+.guide-desc {
+  font-size: 15px;
+  color: #333;
+  line-height: 1.6;
+  margin-bottom: 14px;
+}
+.text-red {
+  color: red;
+}
+
+/* 已完成题目 */
 .completed-question-block {
   margin-bottom: 20px;
   padding-bottom: 16px;
@@ -712,46 +963,28 @@ onMounted(async () => {
   color: #2a53b8;
   margin: 0 0 10px 0;
 }
-
-/* 当前活跃题目块 */
-.current-question-block {
-  margin-top: 10px;
-}
-
-/* 全部完成提示 */
-.all-completed-hint {
-  text-align: center;
-  padding: 20px;
-}
-.completed-message {
-  font-size: 16px;
-  color: #2a9d3a;
-  font-weight: 600;
-}
-
-.write-feel-modal {
-  background: rgba(255, 255, 255, 0.92);
-  border-radius: 18px;
-  padding: 24px 26px 22px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-}
-.modal-title {
-  font-size: 22px;
-  font-weight: 600;
-  color: #111;
-  margin-bottom: 10px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.guide-desc {
-  font-size: 15px;
-  color: #333;
-  line-height: 1.6;
+.submitted-answer {
   margin-bottom: 14px;
 }
 
-/* 历史记录（无背景色，遵守项目记忆规则） */
+/* 答案框 */
+.answer-box {
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 14px;
+}
+.answer-correct {
+  background: #2a9d3a;
+  color: #fff;
+  border: 2px solid #1e7a2a;
+}
+.answer-wrong {
+  background: #fde2e2;
+  color: #b42020;
+  border: 2px solid #b42020;
+}
+
+/* 历史回答 */
 .history-section {
   margin-bottom: 14px;
   padding-top: 10px;
@@ -761,49 +994,26 @@ onMounted(async () => {
   margin-bottom: 10px;
   font-size: 14px;
 }
-.answer-label {
-  color: #888;
-  font-weight: 500;
-}
-.history-answer {
-  color: #333;
-  margin-bottom: 4px;
-}
-.history-wrong {
-  color: #b42020;
-}
-.history-status {
-  font-size: 13px;
-  font-weight: 600;
-}
-.history-status.correct {
-  color: #2a9d3a;
-}
-.history-status.wrong {
-  color: #d97706;
-}
-
-/* 提交答案显示 */
-.submitted-answer {
-  margin-bottom: 14px;
-}
-.answer-box {
+.history-answer-box {
   padding: 10px 14px;
   border-radius: 10px;
   font-size: 14px;
 }
-.answer-correct {
+.history-answer-box.answer-correct {
   background: #2a9d3a;
   color: #fff;
-  border: 1px solid #2a7d30;
+  border: 2px solid #1e7a2a;
 }
-.answer-wrong {
+.history-answer-box.answer-wrong {
   background: #fde2e2;
   color: #b42020;
-  border: 1px solid #d32f2f;
+  border: 2px solid #b42020;
+}
+.answer-label {
+  font-weight: 500;
 }
 
-/* 输入区 */
+/* 输入框 */
 .input-wrapper {
   margin-top: 6px;
 }
@@ -814,19 +1024,23 @@ onMounted(async () => {
   width: 100%;
   min-height: 90px;
   border: 1.5px solid #b8c8f0;
-  box-shadow: 0 0 10px rgba(4, 111, 232, 0.25);
   border-radius: 14px;
   padding: 14px 60px 14px 14px;
   font-size: 16px;
   resize: none;
   outline: none;
   line-height: 1.5;
-  transition: border-color 0.3s, background 0.3s;
+  transition: border-color 0.3s, color 0.3s;
   box-sizing: border-box;
 }
+.feel-input.has-content {
+  border-color: #daa520;
+}
 .feel-input.input-invalid {
-  border-color: #d32f2f;
-  background: #fff5f5;
+  border-color: red;
+}
+.feel-input.text-red {
+  color: red;
 }
 .func-btn-group {
   position: absolute;
@@ -846,8 +1060,15 @@ onMounted(async () => {
   align-items: center;
   gap: 4px;
 }
+.func-text {
+  color: #daa520;
+}
+.func-icon-img {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+}
 
-/* 错误提示 */
 .error-tip {
   margin-top: 8px;
   color: #d32f2f;
@@ -874,50 +1095,7 @@ onMounted(async () => {
   line-height: 1.5;
 }
 
-/* 提交按钮 */
-.submit-btn {
-  width: 100%;
-  height: 52px;
-  background: #2a53b8;
-  color: #fff;
-  border: none;
-  border-radius: 30px;
-  font-size: 18px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  margin-top: 14px;
-  transition: all 0.25s;
-}
-.submit-btn:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(42, 83, 184, 0.4);
-}
-.submit-btn:disabled {
-  background: #b8b8b8;
-  color: #fff;
-  cursor: not-allowed;
-}
-
-/* 已完成显示 */
-.completed-display {
-  margin-top: 14px;
-}
-.completed-answer {
-  padding: 10px 14px;
-  border-radius: 10px;
-  background: #f0f0f0;
-  color: #333;
-  font-size: 14px;
-}
-.completed-answer.answer-correct {
-  background: #2a9d3a;
-  color: #fff;
-}
-
-/* 完成遮罩层（在人物和答题框之下，背景层之上） */
+/* 完成覆盖层 */
 .completion-overlay {
   position: absolute;
   top: 0;
@@ -927,8 +1105,6 @@ onMounted(async () => {
   background: rgba(0, 0, 0, 0.55);
   z-index: 2;
 }
-
-/* AI反馈信息对话框（在人物说话框下方，宽度=说话框宽度） */
 .completion-feedback-bubble {
   position: absolute;
   left: 190px;
@@ -940,16 +1116,15 @@ onMounted(async () => {
   font-size: 15px;
   line-height: 1.6;
   color: #333;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
 }
-.completion-feedback-bubble .feedback-message {
+.feedback-message {
   font-size: 14px;
   color: #333;
   line-height: 1.6;
   white-space: pre-line;
   margin: 0;
 }
-/* 完成全部题目后跳转按钮栏（宽度与对话框300px对齐） */
 .completion-action-bar {
   position: absolute;
   left: 190px;
@@ -980,5 +1155,44 @@ onMounted(async () => {
 }
 .home-btn:hover {
   background: #e5b535;
+}
+
+.all-completed-hint {
+  margin-top: 14px;
+}
+.completed-message {
+  font-size: 16px;
+  color: #2a9d3a;
+  font-weight: 600;
+}
+
+/* 下一篇课文按钮 */
+.next-lesson-btn {
+  position: absolute;
+  right: 70px;
+  width: 580px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 44px;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 22px;
+  font-size: 16px;
+  color: #333;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+.next-lesson-btn.gold-bg {
+  background: #daa520;
+  color: #fff;
+}
+.next-lesson-btn.gold-bg .btn-arrow-icon {
+  filter: brightness(0) invert(1);
+}
+.btn-arrow-icon {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
 }
 </style>

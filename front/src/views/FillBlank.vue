@@ -1,462 +1,844 @@
 <template>
-  <div class="page-container">
-    <!-- 顶部返回导航栏 -->
+  <div class="page-container" :style="pageStyle">
+    <!-- 顶部导航栏 -->
     <div class="top-nav">
-      <span class="back-icon" @click="goBack">‹</span>
+      <span class="back-icon" @click="goBack">&lt;</span>
       <span class="nav-title">寻找文化：初步感悟</span>
-    </div>
-
-    <!-- 数字人区域 -->
-    <div class="digital-human-area">
-      <img
-        src="/image/小小_汉服 1.png"
-        alt="数字人"
-        class="digital-human-img"
-      />
-      <div class="human-talk-bubble" v-if="talkText">
-        {{ talkText }}
-        <span class="voice-icon" @click="playAudio(talkText)">🔊</span>
-        <span class="bubble-arrow"></span>
-      </div>
-
-      <!-- 填空输入区域：在人物对话框下方 -->
-      <div class="blank-input-panel" v-if="showInputModal">
-        <!-- 第一行：输入框 + 确定/取消 -->
-        <div class="input-row">
-          <input
-            type="text"
-            class="input-field"
-            :class="{ 'input-error': modalError }"
-            v-model="tempInput"
-            placeholder="请输入"
-            ref="modalInputRef"
-            @keyup.enter="confirmInput"
-          />
-          <div class="input-btns">
-            <button class="panel-btn cancel-btn" @click="closeInputModal">取消</button>
-            <button class="panel-btn confirm-btn" @click="confirmInput">确定</button>
-          </div>
+      <div class="top-nav-buttons">
+        <div class="nav-btn" @click="mockVoice">
+          <img src="/image/语音 1.png" alt="开启语音" class="btn-icon" />
+          语音播报
         </div>
-        <!-- 第二行：软键盘（左对齐，宽度可大于上方） -->
-        <div class="keyboard">
-          <div class="kb-row" v-for="(row, rIdx) in keyboardLayout" :key="rIdx">
-            <span
-              v-for="key in row"
-              :key="key"
-              class="kb-key"
-              :class="{ 'kb-wide': key === 'Space' }"
-              @click="pressKey(key)"
-            >{{ key === 'Space' ? '空格' : key }}</span>
-          </div>
+        <div class="nav-btn" @click="mockVideo">
+          <img src="/image/视频 2.png" alt="回看视频" class="btn-icon" />
+          回看视频
         </div>
-      </div>
-
-      <!-- 完成全部填空后：AI反馈信息对话框 -->
-      <div class="completion-feedback-bubble" v-if="isAllCompleted">
-        <div class="feedback-message">{{ completionMessage }}</div>
-        <span class="bubble-arrow"></span>
-      </div>
-      <!-- 完成全部填空后：跳转按钮 -->
-      <div class="completion-action-bar" v-if="isAllCompleted">
-        <button class="completion-action-btn report-btn" @click="goToReport">查看评价</button>
-        <button class="completion-action-btn home-btn" @click="goHome">回到首页</button>
       </div>
     </div>
 
     <!-- 课文标签切换 -->
     <div class="tab-wrapper">
       <div
-        v-for="tab in tabList"
+        v-for="(tab, idx) in tabList"
         :key="tab.id"
         class="tab-item"
         :class="getTabClass(tab.id)"
-        @click="openArticle(tab.id)"
+        @click="handleTabClick(tab.id)"
       >
         {{ tab.name }}
       </div>
     </div>
 
-    <!-- 右侧答题容器 -->
-    <div class="right-container">
-      <div class="write-feel-modal">
-        <!-- 已完成的题目（显示在上方） -->
+    <!-- 左侧区域：数字人 + 对话框 或 课文内容【完全copy写写感想】 -->
+    <div class="left-area">
+      <div class="digital-human-area" v-if="currentPanel === 'human'">
+        <img
+          src="/image/小小_汉服 1.png"
+          alt="数字人"
+          class="digital-human-img"
+        />
         <div
-          v-for="(question, qIdx) in completedQuestions"
-          :key="'completed-' + question.id"
-          class="completed-question-block"
+          class="human-talk-bubble"
+          :class="{ expanded: isBubbleExpanded }"
+          v-if="talkText"
         >
-          <h3 class="question-title">{{ question.name }}</h3>
-          <div class="guide-desc" v-html="question.renderedHTML"></div>
+          <span class="bubble-text">{{ talkText }}</span>
+          <img
+            src="/image/语音朗读.png"
+            alt="播放"
+            class="bubble-voice-icon"
+            @click="playBubbleAudio"
+          />
+          <span class="bubble-arrow"></span>
         </div>
 
-        <!-- 当前活跃的题目 -->
-        <div class="current-question-block" v-if="activeQuestionId">
-          <h3 class="modal-title">
-            {{ getQuestionName(activeQuestionId) }}
-            <span class="voice-icon" @click="playAudio(getQuestionHelp(activeQuestionId))">🔊</span>
-          </h3>
-
-          <div class="guide-desc">
-            <template v-if="activeQuestionId === 'bridge'">
-              一、在《赵州桥》的课文中<br>
-              作者详细介绍了桥面
-              <span
-                v-for="(blank, bIdx) in questions[0].blanks"
-                :key="'b-' + bIdx"
-              >
-                <span
-                  class="blank-slot"
-                  :class="getBlankClass('bridge', bIdx)"
-                  :title="isBlankClickable('bridge', bIdx) ? '点击填写' : '尚未解锁'"
-                  @click="onBlankClick('bridge', bIdx)"
-                >
-                  {{ getBlankDisplay('bridge', bIdx) }}
-                </span>
-                <span v-if="getBlankSeparator('bridge', bIdx)">{{ getBlankSeparator('bridge', bIdx) }}</span>
-              </span>
-              写得清清楚楚。
-            </template>
-
-            <template v-else-if="activeQuestionId === 'painting'">
-              二、在《一幅名扬中外的画》的课文中<br>
-              作者详细介绍了画上的
-              <span
-                v-for="(blank, bIdx) in questions[1].blanks"
-                :key="'b-' + bIdx"
-              >
-                <span
-                  class="blank-slot"
-                  :class="getBlankClass('painting', bIdx)"
-                  :title="isBlankClickable('painting', bIdx) ? '点击填写' : '尚未解锁'"
-                  @click="onBlankClick('painting', bIdx)"
-                >
-                  {{ getBlankDisplay('painting', bIdx) }}
-                </span>
-                <span v-if="getBlankSeparator('painting', bIdx)">{{ getBlankSeparator('painting', bIdx) }}</span>
-              </span>
-              写得清清楚楚。
-            </template>
-          </div>
+        <div class="completion-feedback-bubble" v-if="isAllCompleted">
+          <div class="feedback-message">{{ completionMessage }}</div>
+          <span class="bubble-arrow"></span>
         </div>
+        <div class="completion-action-bar" v-if="isAllCompleted">
+          <button class="completion-action-btn report-btn" @click="goToReport">查看评价</button>
+          <button class="completion-action-btn home-btn" @click="goHome">回到首页</button>
+        </div>
+      </div>
 
-        <!-- 全部完成提示 -->
-        <div class="all-completed-hint" v-if="isAllCompleted">
-          <div class="completed-message">已完成所有填空！</div>
+      <div class="article-close-btn" v-if="currentPanel === 'lesson'" @click="closeArticle">×</div>
+      <div class="article-panel" v-if="currentPanel === 'lesson'">
+        <div class="article-content">
+          <h3 class="article-title">{{ currentTabName }}</h3>
+          <div class="article-body" v-html="currentArticleContent"></div>
         </div>
       </div>
     </div>
 
-    <!-- 完成所有填空后的遮罩层 -->
+    <!-- 右侧答题容器：填空题型 -->
+    <div class="right-container" ref="rightContainerRef">
+      <div class="fill-blank-modal">
+        <h3 class="modal-title">
+          初步感悟
+          <img
+            src="/image/语音朗读.png"
+            alt="语音"
+            class="title-voice-icon"
+            @click="playAudio(currentGuideText)"
+          />
+        </h3>
+        <p class="guide-desc">{{ currentGuideText }}</p>
+
+        <!-- 已完成的题目块 -->
+        <div
+          v-for="(block, bIdx) in completedBlocks"
+          :key="'block-' + block.id"
+          class="completed-block"
+        >
+          <div class="block-title">{{ block.title }}</div>
+          <div class="sentence-line" v-html="renderSentence(block)"></div>
+        </div>
+
+        <!-- 当前激活答题块 -->
+        <div class="current-block" v-if="activeBlockId">
+          <div class="block-title">{{ getBlockTitle(activeBlockId) }}</div>
+          <div class="sentence-line">
+            <span v-for="(item, idx) in currentRenderSentence" :key="'cur-' + idx">
+              <span v-if="item.type === 'text'">{{ item.content }}</span>
+              <span
+                v-if="item.type === 'input'"
+                class="fill-input-wrap"
+                :class="{
+                  'input-correct': getBlankStatus(activeBlockId, item.blankIndex) === 'correct',
+                  'input-wrong': getBlankStatus(activeBlockId, item.blankIndex) === 'wrong',
+                  'input-autofilled': getBlankStatus(activeBlockId, item.blankIndex) === 'auto-filled',
+                  'input-locked': isBlankLocked(activeBlockId, item.blankIndex)
+                }"
+                @click="onBlankClick(activeBlockId, item.blankIndex)"
+              >
+                <input
+                  v-if="!isBlankLocked(activeBlockId, item.blankIndex)"
+                  ref="fillInputs"
+                  :data-blank-index="item.blankIndex"
+                  v-model="blankInputMap[activeBlockId][item.blankIndex]"
+                  class="fill-input"
+                  @keyup.enter="submitBlank(activeBlockId, item.blankIndex)"
+                  placeholder="点击输入"
+                />
+                <span v-else class="locked-text" :class="{ 'locked-correct': getBlankStatus(activeBlockId, item.blankIndex) === 'correct', 'locked-autofilled': getBlankStatus(activeBlockId, item.blankIndex) === 'auto-filled' }">
+                  {{ getBlankShowText(activeBlockId, item.blankIndex) || '点击输入' }}
+                </span>
+              </span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div
+      v-if="!isAllCompleted"
+      class="submit-lesson-btn"
+      :class="{ 'gold-bg': canSubmit }"
+      :style="{ top: submitBtnTop + 'px' }"
+      @click="handleSubmitAll"
+    >
+      <img src="/image/矢量 67.png" alt="箭头" class="btn-arrow-icon" />
+      提交答案
+    </div>
+
     <div class="completion-overlay" v-if="isAllCompleted"></div>
   </div>
 </template>
 
-<script setup>
-import { ref, reactive, computed, onMounted, nextTick } from 'vue'
+<script setup lang="ts">
+import { ref, reactive, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
-const modalInputRef = ref(null)
+const rightContainerRef = ref<HTMLElement | null>(null)
 
-// ==================== 题目数据 ====================
-const questions = ref([
+// ========== 自适应缩放（和写写感想完全一样） ==========
+const DESIGN_WIDTH = 1920
+const DESIGN_HEIGHT = 1080
+
+const pageStyle = ref({
+  transform: 'scale(1)',
+  transformOrigin: 'top left',
+  width: DESIGN_WIDTH + 'px',
+  height: DESIGN_HEIGHT + 'px',
+  marginLeft: '0px',
+  marginTop: '0px'
+})
+
+const updateScale = () => {
+  const scaleX = window.innerWidth / DESIGN_WIDTH
+  const scaleY = window.innerHeight / DESIGN_HEIGHT
+  pageStyle.value = {
+    transform: `scale(${scaleX}, ${scaleY})`,
+    transformOrigin: 'top left',
+    width: DESIGN_WIDTH + 'px',
+    height: DESIGN_HEIGHT + 'px',
+    marginLeft: '0px',
+    marginTop: '0px'
+  }
+}
+
+// ========== 提交按钮位置计算 ==========
+const submitBtnTop = ref(0)
+const updateSubmitBtnPosition = () => {
+  nextTick(() => {
+    if (rightContainerRef.value) {
+      const container = rightContainerRef.value
+      const containerTop = container.offsetTop
+      const containerHeight = container.offsetHeight
+      const gap = 18.9
+      submitBtnTop.value = containerTop + containerHeight + gap
+    }
+  })
+}
+
+// ========== 气泡折叠 ==========
+const isBubbleExpanded = ref(true)
+const hasAutoPlayed = ref(false)
+
+// ========== Tab课文标签 ==========
+const tabList = ref([
+  { id: 'bridge', name: '赵州桥' },
+  { id: 'painting', name: '一幅名扬中外的画' }
+])
+
+const articleContents: Record<string, string> = {
+  bridge: '《赵州桥》课文文本...',
+  painting: '《一幅名扬中外的画》课文文本...'
+}
+
+// ========== 填空业务数据 ==========
+type BlankItem = {
+  answer: string
+}
+type BlockItem = {
+  id: string
+  title: string
+  sentence: string
+  blanks: BlankItem[]
+}
+
+// 页面两组填空题目，对应截图
+const blockList = ref<BlockItem[]>([
   {
-    id: 'bridge',
-    name: '赵州桥',
-    helpText: '仔细阅读课文，找到作者描写赵州桥的关键词。桥面的结构、桥洞的设计，都是围绕"写清楚"展开的。',
-    completionText: '完成《赵州桥》填空！你已掌握围绕一个意思把段落写清楚的方法。',
+    id: 'block-bridge',
+    title: '一、在《赵州桥》的课文中',
+    sentence: '作者详细介绍了桥面【BLANK0】上精美的【BLANK1】，把各种【BLANK2】的【BLANK3】写得活灵活现。',
     blanks: [
-      { idx: 0, correct: '结构特点', separator: '、桥洞的' },
-      { idx: 1, correct: '设计原理', separator: '，把每种' },
-      { idx: 2, correct: '造型', separator: '的' },
-      { idx: 3, correct: '美观', separator: '' },
-      { idx: 4, correct: '坚固', separator: '' }
+      { answer: '石栏' },
+      { answer: '图案' },
+      { answer: '姿态' },
+      { answer: '龙' }
     ]
   },
   {
-    id: 'painting',
-    name: '一幅名扬中外的画',
-    helpText: '课文中作者介绍了画上的人物、场景，以及画面的内容和细节。仔细回忆课文内容再尝试一次吧！',
-    completionText: '完成《一幅名扬中外的画》填空！你已体会到作者如何把画面描写得清清楚楚。',
+    id: 'block-painting',
+    title: '二、在《一幅名扬中外的画》的课文中',
+    sentence: '作者先写【BLANK0】，再用上【BLANK1】的修辞手法写来来往往、【BLANK2】的人。',
     blanks: [
-      { idx: 0, correct: '人物', separator: '、' },
-      { idx: 1, correct: '场景', separator: '，把画面的' },
-      { idx: 2, correct: '内容', separator: '和' },
-      { idx: 3, correct: '细节', separator: '' }
+      { answer: '店铺' },
+      { answer: '排比' },
+      { answer: '形态各异' }
     ]
   }
 ])
 
-// 填空状态：pending / correct / auto-filled
-const blankStatus = reactive({})
-// 每题的当前填到第几空
-const currentBlankIdx = reactive({ bridge: 0, painting: 0 })
-// 每题的填空尝试次数
-const blankAttempts = reactive({ bridge: {}, painting: {} })
+const currentTabId = ref('bridge')
+const currentPanel = ref<'human' | 'lesson'>('human')
 
-questions.value.forEach(q => {
-  blankStatus[q.id] = q.blanks.map(() => 'pending')
-  blankAttempts[q.id] = {}
-  q.blanks.forEach(b => { blankAttempts[q.id][b.idx] = 0 })
+// 用户输入
+const blankInputMap = reactive<Record<string, string[]>>({
+  'block-bridge': ['', '', '', ''],
+  'block-painting': ['', '', '']
 })
 
-// 当前题目状态
-const activeQuestionId = ref('bridge')
-const completedQuestions = ref([])
+// 每一个空状态：'' / correct / wrong / auto-filled
+const blankStatusMap = reactive<Record<string, string[]>>({
+  'block-bridge': ['', '', '', ''],
+  'block-painting': ['', '', '']
+})
+// 每个空的尝试次数（per-blank）
+const blankAttemptCount = reactive<Record<string, number[]>>({
+  'block-bridge': [0, 0, 0, 0],
+  'block-painting': [0, 0, 0]
+})
+// 系统自动填入标记（黄色样式）
+const autoFilledMap = reactive<Record<string, boolean[]>>({
+  'block-bridge': [false, false, false, false],
+  'block-painting': [false, false, false]
+})
+// 每块尝试次数（用于整体统计）
+const blockAttemptMap = reactive<Record<string, number>>({
+  'block-bridge': 0,
+  'block-painting': 0
+})
+// 块是否全部通过
+const blockPassedMap = reactive<Record<string, boolean>>({
+  'block-bridge': false,
+  'block-painting': false
+})
+// 是否显示参考答案
+const showRefMap = reactive<Record<string, boolean>>({
+  'block-bridge': false,
+  'block-painting': false
+})
 
-const tabList = computed(() => questions.value.map(q => ({ id: q.id, name: q.name })))
+const talkText = ref('')
+const conversationHistory = ref<Array<{ role: string; text: string }>>([])
 
-// 当前活跃的题目（第一个未完成的）
-const activeQuestion = computed(() => {
-  for (let i = 0; i < questions.value.length; i++) {
-    if (!isQuestionCompleted(questions.value[i].id)) {
-      return questions.value[i].id
-    }
+const currentGuideText = '亲爱的某某某同学，来体会“围绕一个意思把一段话写清楚”的表达方法吧。'
+
+// ========== computed ==========
+const currentTabName = computed(() => {
+  const tab = tabList.value.find(t => t.id === currentTabId.value)
+  return tab ? tab.name : ''
+})
+const currentArticleContent = computed(() => articleContents[currentTabId.value] || '')
+
+// 当前激活题目块，找第一个没通过的
+const activeBlockId = computed(() => {
+  for (const b of blockList.value) {
+    if (!blockPassedMap[b.id]) return b.id
   }
   return null
 })
 
-const isAllCompleted = computed(() => {
-  return questions.value.every(q => isQuestionCompleted(q.id))
+// 已经完成的块
+const completedBlocks = computed(() => {
+  return blockList.value.filter(b => blockPassedMap[b.id])
 })
+
+// 当前块的尝试次数
+const currentBlockAttempts = computed(() => {
+  if (!activeBlockId.value) return 0
+  return blockAttemptMap[activeBlockId.value]
+})
+
+// 当前块提交状态
+const currentBlockSubmitStatus = computed(() => {
+  if (!activeBlockId.value) return ''
+  const arr = blankStatusMap[activeBlockId.value]
+  if(arr.includes('wrong')) return 'wrong'
+  return ''
+})
+
+const showBlockReference = computed(() => {
+  if (!activeBlockId.value) return false
+  return showRefMap[activeBlockId.value]
+})
+
+// 是否全部完成
+const isAllCompleted = computed(() => blockList.value.every(b => blockPassedMap[b.id]))
 
 const completionMessage = computed(() => {
-  return completedQuestions.value.map(q => q.completionText).join('\n')
+  return '太棒啦！你已经掌握了围绕一个意思把一段话写清楚的阅读方法！'
 })
 
-// 检查单个题目是否完成
-function isQuestionCompleted(qid) {
-  const q = questions.value.find(q => q.id === qid)
-  if (!q) return false
-  return blankStatus[qid].every(s => s !== 'pending')
-}
+// 是否允许提交按钮：当前激活块所有填空全部正确或已自动填入
+const canSubmit = computed(() => {
+  if (!activeBlockId.value) return false
+  const statusArr = blankStatusMap[activeBlockId.value]
+  return statusArr.every(s => s === 'correct' || s === 'auto-filled')
+})
 
-// 获取题目名称
-function getQuestionName(qid) {
-  return questions.value.find(q => q.id === qid)?.name || ''
-}
-
-function getQuestionHelp(qid) {
-  return questions.value.find(q => q.id === qid)?.helpText || ''
-}
-
-// 导航样式
-function getTabClass(tabId) {
-  const idx = questions.value.findIndex(q => q.id === tabId)
-  const activeIdx = questions.value.findIndex(q => activeQuestion.value === q.id)
-  const isCompleted = completedQuestions.value.some(q => q.id === tabId)
-  const isActive = tabId === activeQuestionId.value
-  const isLocked = !isActive && !isCompleted && idx > activeIdx
-
-  return {
-    'tab-active': isActive,
-    'tab-completed': isCompleted,
-    'tab-locked': isLocked
+// 解析句子，把【BLANKx】转为渲染节点
+const currentRenderSentence = computed(() => {
+  if (!activeBlockId.value) return []
+  const block = blockList.value.find(b => b.id === activeBlockId.value)!
+  const parts: Array<{ type:'text'|'input'; content?: string; blankIndex?: number }> = []
+  const regex = /【BLANK(\d+)】/g
+  let lastIdx = 0
+  let match
+  while ((match = regex.exec(block.sentence)) !== null) {
+    parts.push({ type:'text', content:block.sentence.slice(lastIdx, match.index) })
+    const blankIdx = Number(match[1])
+    parts.push({ type:'input', blankIndex: blankIdx })
+    lastIdx = regex.lastIndex
   }
-}
+  parts.push({ type:'text', content:block.sentence.slice(lastIdx) })
+  return parts
+})
 
-// 打开题目
-function openArticle(qid) {
-  const idx = questions.value.findIndex(q => q.id === qid)
-  const activeIdx = questions.value.findIndex(q => activeQuestion.value === q.id)
-  if (idx > activeIdx) return
-  activeQuestionId.value = qid
-}
-
-// 获取填空显示内容
-function getBlankDisplay(qid, bIdx) {
-  const status = blankStatus[qid][bIdx]
-  if (status === 'pending') return '点击输入'
-  if (status === 'correct') return questions.value.find(q => q.id === qid).blanks[bIdx].correct
-  if (status === 'auto-filled') return questions.value.find(q => q.id === qid).blanks[bIdx].correct
-  return '点击输入'
-}
-
-// 获取填空样式类
-function getBlankClass(qid, bIdx) {
-  const status = blankStatus[qid][bIdx]
-  const clickable = isBlankClickable(qid, bIdx)
-  return {
-    'blank-pending': status === 'pending' && !clickable,
-    'blank-clickable': status === 'pending' && clickable,
-    'blank-correct': status === 'correct',
-    'blank-autofilled': status === 'auto-filled'
+// ✅修复：已经完成块的html渲染，入参传完整block，读取本block的autoFilledMap，不要拿activeBlockId
+const renderSentence = (block:BlockItem) => {
+  let html = block.sentence
+  const answers = blankInputMap[block.id]
+  for(let i=0;i<answers.length;i++){
+    const isAuto = autoFilledMap[block.id]?.[i]
+    const cls = isAuto ? 'fill-autofilled' : 'fill-correct'
+    html = html.replace(`【BLANK${i}】`,`<span class="fill-static ${cls}">${answers[i]}</span>`)
   }
+  return html
 }
 
-// 判断填空是否可点击
-function isBlankClickable(qid, bIdx) {
-  if (blankStatus[qid][bIdx] !== 'pending') return false
-  return currentBlankIdx[qid] === bIdx
+// ========== 工具函数 ==========
+const getBlockTitle = (bid:string) => {
+  const b = blockList.value.find(x=>x.id===bid)
+  return b?.title || ''
+}
+const getBlockRefAnswer = (bid:string) => {
+  const b = blockList.value.find(x=>x.id===bid)
+  if(!b) return ''
+  return b.blanks.map(x=>x.answer).join(' / ')
 }
 
-// 获取填空后的分隔文字
-function getBlankSeparator(qid, bIdx) {
-  const q = questions.value.find(q => q.id === qid)
-  return q.blanks[bIdx].separator
+const getBlankStatus = (blockId:string, idx:number) => {
+  return blankStatusMap[blockId]?.[idx] ?? ''
 }
-
-// 渲染已完成题目的HTML
-function renderCompletedHTML(question) {
-  const q = questions.value.find(q => q.id === question.id)
-  if (!q) return ''
-  const blanks = q.blanks.map(b => {
-    const status = blankStatus[q.id][b.idx]
-    const cls = status === 'correct' ? 'correct-box' : 'autofilled-box'
-    return `<span class="answer-box ${cls}">${b.correct}</span>${b.separator}`
-  }).join('')
-
-  if (q.id === 'bridge') {
-    return `一、在《${q.name}》的课文中<br>作者详细介绍了桥面${blanks}写得清清楚楚。`
-  } else {
-    return `二、在《${q.name}》的课文中<br>作者详细介绍了画上的${blanks}写得清清楚楚。`
+/**
+ * 实现需求：上一空没有完成，后面输入框锁定灰色不可输入
+ * auto-filled 也算完成（系统自动填入后解锁下一空）
+ */
+const isBlankLocked = (blockId:string, idx:number) => {
+  const arr = blankStatusMap[blockId]
+  for(let i=0;i<idx;i++){
+    if(arr[i] !== 'correct' && arr[i] !== 'auto-filled') return true
   }
+  return false
 }
-
-// ==================== 填空输入弹窗 ====================
-const showInputModal = ref(false)
-const tempInput = ref('')
-const editingBlank = reactive({ qid: '', bIdx: -1 })
-const modalError = ref(false) // 输入错误时输入框变红
-
-function onBlankClick(qid, bIdx) {
-  if (!isBlankClickable(qid, bIdx)) return
-  editingBlank.qid = qid
-  editingBlank.bIdx = bIdx
-  tempInput.value = ''
-  modalError.value = false
-  showInputModal.value = true
-  nextTick(() => modalInputRef.value?.focus())
+const getBlankShowText = (blockId:string, idx:number) => {
+  const arr = blankStatusMap[blockId]
+  if(arr[idx]==='correct') return blankInputMap[blockId][idx]
+  if(arr[idx]==='auto-filled') return blankInputMap[blockId][idx]
+  return ''
 }
-
-function closeInputModal() {
-  showInputModal.value = false
-  tempInput.value = ''
-  modalError.value = false
+const isAutoFilled = (blockId:string, idx:number) => {
+  return autoFilledMap[blockId]?.[idx] ?? false
 }
-
-async function confirmInput() {
-  if (!tempInput.value.trim()) return
-  const qid = editingBlank.qid
-  const bIdx = editingBlank.bIdx
-  const q = questions.value.find(q => q.id === qid)
-  if (!q) return
-
-  const blank = q.blanks[bIdx]
-  const isCorrect = tempInput.value.trim() === blank.correct
-  const attempts = blankAttempts[qid][bIdx] || 0
-
-  if (isCorrect) {
-    blankStatus[qid][bIdx] = 'correct'
-    advanceBlank(qid)
-    closeInputModal()
-    setTalkText(`回答正确！继续填写下一个空吧。`)
-  } else {
-    blankAttempts[qid][bIdx] = attempts + 1
-    if (blankAttempts[qid][bIdx] >= 2) {
-      // 第二次错误：自动填写正确答案（黄色）
-      blankStatus[qid][bIdx] = 'auto-filled'
-      advanceBlank(qid)
-      closeInputModal()
-      setTalkText(`这是学生输入错误，AI生成的一段帮助学生的文案和音频文件。仔细阅读课文再尝试一次吧！`)
-    } else {
-      // 第一次错误：输入框变红 + AI帮助 + 清空输入 + 不显示错误答案
-      modalError.value = true
-      tempInput.value = ''
-      setTalkText(`回答不正确。${q.helpText}`)
-      nextTick(() => modalInputRef.value?.focus())
-    }
-  }
+const getBlankAttempts = (blockId:string, idx:number) => {
+  return blankAttemptCount[blockId]?.[idx] ?? 0
 }
-
-// 推进到下一个空或完成题目
-function advanceBlank(qid) {
-  const q = questions.value.find(q => q.id === qid)
-  currentBlankIdx[qid]++
-  if (currentBlankIdx[qid] >= q.blanks.length) {
-    // 本题完成
-    if (!completedQuestions.value.some(c => c.id === qid)) {
-      // 快照渲染HTML，确保答题状态颜色保留
-      const renderedHTML = renderCompletedHTML({ id: qid, name: q.name })
-      completedQuestions.value.push({
-        id: qid,
-        name: q.name,
-        completionText: q.completionText,
-        renderedHTML
-      })
-      // 尝试切换到下一题
-      const next = activeQuestion.value
-      if (next && next !== qid) {
-        activeQuestionId.value = next
-        setTalkText(q.completionText)
-      } else if (isAllCompleted.value) {
-        setTalkText('恭喜你完成了所有填空！')
+// 点击输入框区域时自动聚焦
+const onBlankClick = (blockId:string, idx:number) => {
+  if(isBlankLocked(blockId, idx)) return
+  nextTick(() => {
+    const inputs = document.querySelectorAll('.fill-input-wrap:not(.input-locked) .fill-input')
+    inputs.forEach((el) => {
+      if((el as HTMLInputElement).dataset.blankIndex === String(idx)) {
+        ;(el as HTMLInputElement).focus()
       }
+    })
+  })
+}
+
+// tab样式
+const getTabClass = (tabId: string) => {
+  const idx = tabList.value.findIndex(t => t.id === tabId)
+  const isActive = tabId === currentTabId.value
+  // 绑定对应block
+  const mapTabToBlock:Record<string,string> = {
+    bridge:'block-bridge',
+    painting:'block-painting'
+  }
+  const blockId = mapTabToBlock[tabId]
+  const isPassed = blockPassedMap[blockId]
+  const firstUnpassedBlockIdx = blockList.value.findIndex(b=>!blockPassedMap[b.id])
+  const lockTabIndex = tabList.value.findIndex(t=>{
+    const bid = mapTabToBlock[t.id]
+    return bid === blockList.value[firstUnpassedBlockIdx]?.id
+  })
+  const isLocked = !isPassed && idx>lockTabIndex
+
+  return {
+    'tab-active': isActive && !isLocked,
+    'tab-passed': isPassed,
+    'tab-locked': isLocked,
+    'tab-unlocked': !isLocked && !isActive && !isPassed
+  }
+}
+
+const handleTabClick = (tabId:string) => {
+  const idx = tabList.value.findIndex(t => t.id === tabId)
+  const mapTabToBlock:Record<string,string> = {
+    bridge:'block-bridge',
+    painting:'block-painting'
+  }
+  const firstUnpassedBlockIdx = blockList.value.findIndex(b=>!blockPassedMap[b.id])
+  const lockTabIndex = tabList.value.findIndex(t=>{
+    const bid = mapTabToBlock[t.id]
+    return bid === blockList.value[firstUnpassedBlockIdx]?.id
+  })
+  if(idx>lockTabIndex) return
+
+  if(tabId === currentTabId.value){
+    openArticle()
+  }else{
+    switchToTab(tabId)
+  }
+}
+
+const switchToTab = (tabId:string) => {
+  currentTabId.value = tabId
+  currentPanel.value = 'human'
+  updateSubmitBtnPosition()
+  saveState()
+}
+
+const openArticle = () => {
+  currentPanel.value = 'lesson'
+}
+const closeArticle = () => {
+  currentPanel.value = 'human'
+}
+
+// 最大错误次数（达到后自动填入正确答案，便于后端后续调整）
+const MAX_WRONG_ATTEMPTS = 2
+
+// ========== 填空提交单个空 ==========
+const submitBlank = async (blockId:string, blankIndex:number) => {
+  const block = blockList.value.find(b=>b.id===blockId)
+  if(!block) return
+  const userVal = blankInputMap[blockId][blankIndex].trim()
+  if(!userVal) return
+
+  blankAttemptCount[blockId][blankIndex] += 1
+  blockAttemptMap[blockId] += 1
+  const realAnswer = block.blanks[blankIndex].answer.trim()
+  const isCorrect = userVal === realAnswer
+
+  if(isCorrect){
+    blankStatusMap[blockId][blankIndex] = 'correct'
+    conversationHistory.value.push({role:'student', text:`填空${blankIndex+1}:${userVal}`})
+    talkText.value = '回答正确，请继续填写下一个关键词！'
+    playAudio(talkText.value)
+  }else{
+    // 不显示错误答案，清空输入框
+    blankInputMap[blockId][blankIndex] = ''
+
+    if(blankAttemptCount[blockId][blankIndex] >= MAX_WRONG_ATTEMPTS){
+      // 达到最大错误次数：AI自动填入正确答案（黄色样式）
+      blankStatusMap[blockId][blankIndex] = 'auto-filled'
+      autoFilledMap[blockId][blankIndex] = true
+      blankInputMap[blockId][blankIndex] = realAnswer
+      const explainText = `这个填空的正确答案是"${realAnswer}"。请对照课文理解这个关键词的用法。`
+      talkText.value = explainText
+      playAudio(explainText)
+    }else{
+      // 第一次错误：红色提示，AI讲解
+      blankStatusMap[blockId][blankIndex] = 'wrong'
+      currentPanel.value = 'human'
+      const feedbackText = `回答不正确，请再仔细读一读课文，重新填写。你还有 ${MAX_WRONG_ATTEMPTS - blankAttemptCount[blockId][blankIndex]} 次机会。`
+      talkText.value = feedbackText
+      playAudio(feedbackText)
     }
   }
+
+  // 检查本块是否全部完成
+  const allOk = blankStatusMap[blockId].every(s=>s==='correct' || s==='auto-filled')
+  if(allOk){
+    blockPassedMap[blockId] = true
+  }
+  saveState()
+  updateSubmitBtnPosition()
 }
 
-// ==================== 键盘模拟 ====================
-const keyboardLayout = [
-  ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
-  ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
-  ['Z', 'X', 'C', 'V', 'B', 'N', 'M'],
-  ['空格', '删除']
-]
+// ========== 提交按钮：切换下一课 ✅修复硬编码映射 ==========
+const handleSubmitAll = () => {
+  if(!canSubmit.value) return
+  const nextBid = activeBlockId.value
+  if(!nextBid) return
 
-function pressKey(key) {
-  if (key === '空格') {
-    tempInput.value += ' '
-  } else if (key === '删除') {
-    tempInput.value = tempInput.value.slice(0, -1)
-  } else {
-    tempInput.value += key
+  const idx = blockList.value.findIndex(b=>b.id === nextBid)
+  // 还有下一题
+  if(idx+1 < blockList.value.length){
+    const nextBlock = blockList.value[idx+1]
+    // block-id -> tab-id
+    const blockToTab:Record<string,string> = {
+      'block-bridge':'painting',
+      'block-painting':'painting'
+    }
+    currentTabId.value = blockToTab[nextBlock.id]
+    currentPanel.value = 'human'
+    const text = fetchTalkText(nextBlock.id)
+    talkText.value = text
+    playAudio(text)
+    updateSubmitBtnPosition()
+    saveState()
+  }
+  // 全部完成
+  if(isAllCompleted.value){
+    talkText.value = '太棒啦！你已经完成全部填空练习。'
+    playAudio(talkText.value)
+    saveState()
   }
 }
 
-// ==================== 数字人对话 ====================
-const talkText = ref('')
+// ========== 语音 ==========
+const playAudio = (text:string) => {
+  console.log('播放TTS语音', text)
+}
+const playBubbleAudio = () => {
+  isBubbleExpanded.value = true
+  if(talkText.value) playAudio(talkText.value)
+}
+watch(talkText, ()=>{
+  isBubbleExpanded.value = false
+}, {immediate:false})
 
-function setTalkText(text) {
-  talkText.value = text
+const mockVoice = ()=>{}
+const mockVideo = ()=>{}
+
+const fetchTalkText = async (blockId:string):Promise<string>=>{
+  const map:Record<string,string> = {
+    'block-bridge':'亲爱的某某同学，我们来梳理“围绕一个意思把一段话写清楚”的表达方法吧。你可以点击课文名称打开课文哦。',
+    'block-painting':'很好，我们继续练习，体会写清楚一段话的技巧。'
+  }
+  return map[blockId] || '请完成填空练习。'
 }
 
-const playAudio = (text) => {
-  console.log('播放语音:', text)
+// ========== 本地持久化保存状态 ==========
+const STORAGE_KEY = 'fill-blank-state'
+const saveState = () => {
+  const state = {
+    currentTabId:currentTabId.value,
+    currentPanel:currentPanel.value,
+    blankInputMap:JSON.parse(JSON.stringify(blankInputMap)),
+    blankStatusMap:JSON.parse(JSON.stringify(blankStatusMap)),
+    blankAttemptCount:JSON.parse(JSON.stringify(blankAttemptCount)),
+    autoFilledMap:JSON.parse(JSON.stringify(autoFilledMap)),
+    blockAttemptMap:{...blockAttemptMap},
+    blockPassedMap:{...blockPassedMap},
+    showRefMap:{...showRefMap},
+    talkText:talkText.value,
+    conversationHistory:JSON.parse(JSON.stringify(conversationHistory.value)),
+    hasAutoPlayed:hasAutoPlayed.value
+  }
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
 }
 
-// ==================== 路由跳转 ====================
-const goBack = () => router.push('/')
-const goToReport = () => router.push('/report')
-const goHome = () => router.push('/')
+const restoreState = () => {
+  const str = localStorage.getItem(STORAGE_KEY)
+  if(!str) return false
+  try{
+    const s = JSON.parse(str)
+    currentTabId.value = s.currentTabId || 'bridge'
+    currentPanel.value = s.currentPanel || 'human'
+    Object.assign(blankInputMap, s.blankInputMap || {})
+    Object.assign(blankStatusMap, s.blankStatusMap || {})
+    Object.assign(blankAttemptCount, s.blankAttemptCount || {})
+    Object.assign(autoFilledMap, s.autoFilledMap || {})
+    Object.assign(blockAttemptMap, s.blockAttemptMap || {})
+    Object.assign(blockPassedMap, s.blockPassedMap || {})
+    Object.assign(showRefMap, s.showRefMap || {})
+    talkText.value = s.talkText || ''
+    conversationHistory.value = s.conversationHistory || []
+    hasAutoPlayed.value = s.hasAutoPlayed || false
 
-// ==================== 生命周期 ====================
-onMounted(() => {
-  setTalkText('亲爱的同学，来填写课文中的关键词吧。点击下划线的空白处，输入正确答案。')
+    // 如果缓存读到全部任务完成，清空缓存重置
+    const allDone = blockList.value.every(b => blockPassedMap[b.id])
+    if(allDone) {
+      localStorage.removeItem(STORAGE_KEY)
+      blockList.value.forEach(b=>{
+        blockPassedMap[b.id] = false
+        blockAttemptMap[b.id] = 0
+        showRefMap[b.id] = false
+        blankInputMap[b.id] = b.blanks.map(()=>'')
+        blankStatusMap[b.id] = b.blanks.map(()=>'')
+        blankAttemptCount[b.id] = b.blanks.map(()=>0)
+        autoFilledMap[b.id] = b.blanks.map(()=>false)
+      })
+      return false
+    }
+    return true
+  }catch{
+    localStorage.removeItem(STORAGE_KEY)
+    return false
+  }
+}
+
+
+// 导航
+const goBack = ()=>{
+  saveState()
+  router.push('/preview/write-feel')
+}
+const goToReport = ()=>router.push('/report')
+const goHome = ()=>{
+  saveState()
+  router.push('/')
+}
+
+watch([()=>blankInputMap, currentPanel], ()=>{
+  saveState()
+  updateSubmitBtnPosition()
+}, {deep:true})
+
+onMounted(async ()=>{
+  updateScale()
+  window.addEventListener('resize', updateScale)
+  const restored = restoreState()
+  if(!restored){
+    const firstBid = blockList.value[0].id
+    const text = await fetchTalkText(firstBid)
+    talkText.value = text
+    setTimeout(()=>playAudio(text), 500)
+    hasAutoPlayed.value = true
+    saveState()
+  }else if(!hasAutoPlayed.value && talkText.value){
+    // ✅修复变量名bug
+    setTimeout(()=>playAudio(talkText.value), 500)
+    hasAutoPlayed.value = true
+    saveState()
+  }
+  updateSubmitBtnPosition()
+})
+
+onUnmounted(()=>{
+  window.removeEventListener('resize', updateScale)
+  saveState()
 })
 </script>
 
 <style scoped>
 .page-container {
-  width: 100vw;
-  height: 100vh;
-  background: url('/image 110.png') no-repeat center center;
+  width: 1920px;
+  height: 1080px;
+  background: url('/image/image 110.png') no-repeat center center;
   background-size: cover;
   position: relative;
   overflow: hidden;
 }
 
+/* ========== 顶部导航【和写写感想完全复用】 ========== */
+.top-nav {
+  position: absolute;
+  top: 30px;
+  left: 60px;
+  right: 60px;
+  height: 65px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 25px;
+  background: rgba(245, 244, 243, 0.45);
+  border-radius: 12px;
+  color: #4e1b05ed;
+  font-weight: 900;
+  font-size: 25px;
+  z-index: 10;
+}
+.back-icon {
+  font-size: 22px;
+  cursor: pointer;
+}
+.top-nav-buttons {
+  margin-left: auto;
+  display: flex;
+  gap: 12px;
+}
+.nav-btn {
+  width: 120px;
+  height: 35px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 16px;
+  background: rgb(220, 137, 29);
+  color: #fff;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 300;
+  letter-spacing: 1px;
+  box-shadow: 0 2px 4px rgba(118, 117, 117, 0.647);
+  cursor: pointer;
+}
+.btn-icon {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+}
+
+/* ========== Tab标签【完全复用】 ========== */
+.tab-wrapper {
+  position: absolute;
+  top: 110px;
+  left: 60px;
+  display: flex;
+  align-items: center;
+  background: rgba(240, 239, 238, 0.2);
+  border-radius: 12px;
+  border: 1px solid rgb(250, 248, 247, 0.5);
+  padding: 6px 14px;
+  gap: 8px;
+  z-index: 10;
+}
+.tab-item {
+  padding: 8px 19px;
+  height: 35px;
+  background: #ffffff;
+  border-radius: 20px;
+  font-size: 20px;
+  font-family: "FZCuKaiS-R-GB", "KaiTi", "STKaiti", 楷体, serif;
+  font-weight: 580;
+  line-height: 19px;
+  letter-spacing: -2px;
+  color: #333;
+  cursor: pointer;
+  border: 1px solid #a29f9f;
+  box-shadow: 0 2px 4px rgba(134, 129, 129, 0.647);
+  transition: all 0.2s;
+}
+.tab-item.tab-active {
+  background: #d27f01;
+  color: #fff;
+  border-color: #d27f01;
+}
+.tab-item.tab-passed {
+  background: #d27f01;
+  color: #fff;
+  border-color: #d27f01;
+}
+.tab-item.tab-locked {
+  background: #e9e8e8;
+  color: #a19d9d;
+  border-color: #c5c5c5;
+  cursor: not-allowed;
+}
+.tab-item.tab-unlocked {
+  background: #fff;
+  color: #333;
+  border-color: #ddd;
+}
+
+/* ========== 左侧数字人、课文面板【100%复制写写感想】 ========== */
+.left-area {
+  position: absolute;
+  top: 170px;
+  left: 60px;
+  bottom: 20px;
+  width: 500px;
+  z-index: 5;
+}
+.article-close-btn {
+  position: absolute;
+  top: -50px;
+  right: -200px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #fff;
+  text-align: center;
+  line-height: 32px;
+  font-size: 18px;
+  cursor: pointer;
+  z-index: 6;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: transform 0.2s;
+}
+.article-close-btn:hover {
+  transform: scale(1.1);
+}
 .digital-human-area {
   position: absolute;
-  left: 180px;
+  left: 80px;
   bottom: 20px;
-  z-index: 5;
 }
 .digital-human-img {
   width: 180px;
   height: auto;
   display: block;
-  filter: drop-shadow(0 8px 20px rgba(0,0,0,0.25));
+  filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.25));
 }
 .human-talk-bubble {
   position: absolute;
@@ -469,331 +851,249 @@ onMounted(() => {
   font-size: 15px;
   line-height: 1.6;
   color: #333;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
-}
-.bubble-arrow {
-  position: absolute;
-  left: -10px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 0;
-  height: 0;
-  border-top: 8px solid transparent;
-  border-bottom: 8px solid transparent;
-  border-right: 10px solid #fff;
-}
-.voice-icon {
-  font-size: 16px;
-  cursor: pointer;
-}
-
-.top-nav {
-  position: absolute;
-  top: 30px;
-  left: 30px;
-  right: 30px;
-  height: 54px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
   display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 0 25px;
-  background: rgba(242, 240, 238, 0.45);
-  border-radius: 12px;
-  color: #333;
-  font-size: 18px;
-  z-index: 10;
-}
-.back-icon {
-  font-size: 22px;
-  cursor: pointer;
-}
-
-.tab-wrapper {
-  position: absolute;
-  top: 110px;
-  left: 40px;
-  display: flex;
-  align-items: center;
-  background: rgba(240, 239, 238, 0.3);
-  border-radius: 12px;
-  border: 1px solid rgba(250, 248, 247, 0.5);
-  padding: 6px 14px;
-  gap: 8px;
-  z-index: 10;
-}
-.tab-item {
-  padding: 8px 22px;
-  height: 38px;
-  background: #fff;
-  border-radius: 20px;
-  font-size: 16px;
-  line-height: 20px;
-  color: #333;
-  cursor: pointer;
-  border: 1px solid #ddd;
-  transition: all 0.2s;
-}
-.tab-item.tab-active {
-  background: #fff;
-  color: #333;
-  border-color: #4078e8;
-  box-shadow: 0 0 0 2px rgba(64,120,232,0.3);
-}
-.tab-item.tab-completed {
-  background: #f7c846;
-  color: #fff;
-  border-color: #f7c846;
-}
-.tab-item.tab-locked {
-  background: #d0d0d0;
-  color: #666;
-  border-color: #c5c5c5;
-  cursor: not-allowed;
-}
-
-.right-container {
-  position: absolute;
-  top: 110px;
-  right: 30px;
-  width: 560px;
-  z-index: 10;
-}
-.write-feel-modal {
-  background: rgba(255, 255, 255, 0.92);
-  border-radius: 18px;
-  padding: 24px 26px 22px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-}
-.modal-title {
-  font-size: 22px;
-  font-weight: 600;
-  color: #111;
-  margin-bottom: 12px;
-  display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
 }
-.guide-desc {
-  font-size: 15px;
-  color: #333;
-  line-height: 2.2;
-}
-
-/* 填空槽样式 */
-.blank-slot {
-  display: inline-block;
-  min-width: 80px;
-  height: 25px;
-  line-height: 22px;
-  padding: 0 8px;
-  margin: 0 4px;
-  text-align: center;
-  vertical-align: middle;
-  border-radius: 8px;
-  border: 1px solid #cccccc;
-  background: #f3f3f3;
-  color: #999999;
-  font-weight: normal;
-  cursor: default;
-  text-decoration: none;
-  box-sizing: border-box;
-  transition: all 0.25s;
-}
-/* 可点击待填写状态：橙色边框，白底，原型样式 */
-.blank-slot.blank-clickable {
-  border-color: #e69138;
-  border-width: 1px;
-  background: #ffffff;
-  color: #999;
-  cursor: pointer;
-  animation: blank-pulse 1.5s ease-in-out infinite;
-}
-.blank-slot.blank-correct {
-  border-color: #2a9d3a;
-  background: #2a9d3a;
-  color: #ffffff;
-  cursor: default;
-}
-.blank-slot.blank-autofilled {
-  border-color: #d97706;
-  background: #f7c846;
-  color: #ffffff;
-  cursor: default;
-}
-
-@keyframes blank-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(230,145,56,0.25); }
-  50% { box-shadow: 0 0 0 5px rgba(230,145,56,0); }
-}
-
-/* 答案盒子 */
-.answer-box {
-  display: inline-block;
-  padding: 3px 12px;
-  border-radius: 6px;
-  margin: 0 4px;
-  font-weight: 600;
-  color: #fff;
-  border-bottom: 3px solid transparent;
-}
-.answer-box.correct-box {
-  background: #2a9d3a;
-  border-bottom-color: #1d7228;
-  box-shadow: 0 2px 6px rgba(42,157,58,0.3);
-}
-.answer-box.autofilled-box {
-  background: #f7c846;
-  border-bottom-color: #c9a030;
-  box-shadow: 0 2px 6px rgba(247,200,70,0.3);
-}
-
-/* 已完成题目块 */
-.completed-question-block {
-  margin-bottom: 18px;
-  padding-bottom: 16px;
-  border-bottom: 1px dashed #ddd;
-}
-.question-title {
-  font-size: 17px;
-  font-weight: 600;
-  color: #2a53b8;
-  margin: 0 0 10px 0;
-}
-.current-question-block {
-  margin-top: 10px;
-}
-
-/* 全部完成提示 */
-.all-completed-hint {
-  text-align: center;
-  padding: 20px;
-}
-.completed-message {
-  font-size: 16px;
-  color: #2a9d3a;
-  font-weight: 600;
-}
-
-/* 填空输入面板（位于数字人区域下方） */
-.blank-input-panel {
-  position: absolute;
-  left: 190px;
-  top: 240px;
-  width: 340px;
-  z-index: 6;
-}
-
-/* 第一行：输入框 + 按钮 */
-.input-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-.input-field {
+.bubble-text {
   flex: 1;
-  height: 44px;
-  border: 2px solid #4078e8;
-  border-radius: 8px;
-  padding: 0 14px;
-  font-size: 16px;
-  color: #333;
-  background: #fff;
-  outline: none;
-  box-sizing: border-box;
+  max-height: 72px;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
 }
-.input-field:focus {
-  border-color: #2a53b8;
-  border-width: 2.5px;
+.human-talk-bubble.expanded .bubble-text {
+  max-height: none;
 }
-.input-field.input-error {
-  border-color: #dc2626;
-  border-width: 2.5px;
-  color: #b42020;
-  background: #fef2f2;
-  animation: input-shake 0.3s ease-in-out;
-}
-@keyframes input-shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-5px); }
-  75% { transform: translateX(5px); }
-}
-.input-btns {
-  display: flex;
-  gap: 6px;
-}
-.panel-btn {
-  height: 44px;
-  padding: 0 16px;
-  border: none;
-  border-radius: 8px;
-  font-size: 15px;
+.bubble-voice-icon {
+  width: 20px;
+  height: 20px;
   cursor: pointer;
-  transition: all 0.15s;
-  white-space: nowrap;
-}
-.panel-btn.confirm-btn {
-  background: linear-gradient(135deg, #f7c846 0%, #e5b535 100%);
-  color: #fff;
-  font-weight: 600;
-}
-.panel-btn.confirm-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(247,200,70,0.4);
-}
-.panel-btn.cancel-btn {
-  background: #fff;
-  color: #333;
-  border: 1px solid #ddd;
-}
-.panel-btn.cancel-btn:hover {
-  background: #f5f5f5;
+  flex-shrink: 0;
+  margin-top: 2px;
+  object-fit: contain;
 }
 
-/* 软键盘（左对齐，可宽于上方） */
-.keyboard {
+.article-panel {
+  width: 700px;
+  height: 600px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 18px;
+  padding: 20px 24px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  box-sizing: border-box;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  padding: 8px;
-  background: #f0f0f0;
-  border-radius: 10px;
-  /* 宽度可大于上方的输入行 */
-  width: max-content;
-  min-width: 600px;
 }
-.kb-row {
+.article-content {
+  flex: 1;
+}
+.article-title {
+  font-size: 20px;
+  margin: 0 0 12px;
+  color: #333;
+}
+.article-body {
+  font-size: 15px;
+  line-height: 1.8;
+  color: #444;
+}
+
+/* ========== 右侧填空面板 ========== */
+.right-container {
+  position: absolute;
+  top: 170px;
+  right: 70px;
+  width: 580px;
+  z-index: 10;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 18px;
+  border-color: #d27f01;
+  border-width: 2px;
+  border-style: solid;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  padding: 20px 24px;
+  box-sizing: border-box;
   display: flex;
-  gap: 4px;
-  justify-content: flex-start;
+  flex-direction: column;
 }
-.kb-key {
-  min-width: 28px;
-  height: 32px;
-  padding: 0 10px;
-  background: #fff;
-  border-radius: 6px;
-  font-size: 13px;
+.modal-title {
+  font-size: 25px;
+  font-weight: 600;
+  color: #111;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.title-voice-icon {
+  width: 22px;
+  height: 22px;
+  cursor: pointer;
+  object-fit: contain;
+}
+.guide-desc {
+  font-size: 20px;
+  color: #333;
+  line-height: 1.6;
+  margin-bottom:14px;
+}
+
+.completed-block {
+  margin-bottom: 18px;
+  padding-bottom:14px;
+  border-bottom:1px dashed #ddd;
+}
+.block-title {
+  font-size:17px;
+  font-weight:600;
+  color:#121213;
+  margin-bottom:8px;
+}
+.sentence-line {
+  font-size:16px;
+  line-height:1.8;
+}
+.fill-static.fill-correct{
+  background:#2a9d3a;
+  color:#fff;
+  border:1px solid #1e7a2a;
+  padding:2px 8px;
+  border-radius:11px;
+  margin:0 4px;
+  line-height: 24px;
+}
+.fill-static.fill-autofilled{
+  background:#ffd54f;
+  color:#5d4037;
+  border:1px solid #f9a825;
+  padding:2px 8px;
+  border-radius:11px;
+  margin:0 4px;
+  line-height: 24px;
+}
+
+.fill-input-wrap {
+  display: inline-block;
+  vertical-align: middle;
+  margin: 0 4px;
+}
+.fill-input {
+ display: inline-block;
+  vertical-align: middle;
+  border:1px solid #ee7104;
+  border-radius:11px;
+  padding:3px 8px;
+  font-size:16px;
+  width:80px;
+  height:36px;
+  box-sizing: border-box;
+  background:#fff;
+  color:#333;
+  line-height: 28px;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+}
+.fill-input-wrap.input-correct .fill-input{
+  background:#2a9d3a;
+  border-color:#1e7a2a;
+  color:#fff;
+}
+.fill-input-wrap.input-wrong .fill-input{
+  background:#fde2e2;
+  border-color:#b42020;
+  color:#b42020;
+}
+.fill-input-wrap.input-autofilled .fill-input{
+  background:#ffd54f;
+  border-color:#f9a825;
+  color:#5d4037;
+}
+.fill-input-wrap.input-locked .locked-text{
+  display: inline-block;
+  vertical-align: middle;
+  border:1px solid #ee7104;
+  border-radius:11px;
+  padding:3px 8px;
+  font-size:16px;
+  width:80px;
+  height:36px;
+  box-sizing: border-box;
+  background:#cfcece;
+  color:#888;
+  line-height: 28px;
+  text-align:center;
+  cursor: not-allowed;
+  user-select: none;
+}
+.fill-input-wrap.input-locked .locked-text.locked-correct{
+  background:#2a9d3a;
+  color:#fff;
+  border-color:#1e7a2a;
+}
+.fill-input-wrap.input-locked .locked-text.locked-autofilled{
+  background:#ffd54f;
+  color:#5d4037;
+  border-color:#f9a825;
+}
+.fill-input-wrap.input-autofilled .locked-text{
+  background:#ffd54f;
+  color:#5d4037;
+  border:1px solid #f9a825;
+}
+
+.reference-answer {
+  margin-top:10px;
+  padding: 10px 14px;
+  background: #e3f2fd;
+  border-radius: 10px;
+  border-left: 3px solid #1976d2;
+}
+.ref-label {
+  font-size:13px;
+  color:#1976d2;
+  font-weight:600;
+  margin-bottom:4px;
+}
+.ref-content {
+  font-size:14px;
+  color:#333;
+}
+
+/* 提交按钮 */
+.submit-lesson-btn {
+  position: absolute;
+  right: 70px;
+  width: 580px;
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
+  height: 44px;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 22px;
+  font-size: 16px;
+  color: #888;
+  cursor: not-allowed;
+  transition: background 0.3s;
+}
+.submit-lesson-btn.gold-bg {
+  background: #daa520;
+  color: #fff;
   cursor: pointer;
-  user-select: none;
-  border: 1px solid #ddd;
-  transition: all 0.1s;
 }
-.kb-key:hover {
-  background: #e8e8e8;
+.submit-lesson-btn.gold-bg .btn-arrow-icon {
+  filter: brightness(0) invert(1);
 }
-.kb-key:active {
-  transform: scale(0.95);
-  background: #d0d0d0;
-}
-.kb-key.kb-wide {
-  min-width: 90px;
+.btn-arrow-icon {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
 }
 
-/* 完成遮罩层 */
+/* 完成遮罩、数字人反馈气泡，完全复用写写感想 */
 .completion-overlay {
   position: absolute;
   top: 0;
@@ -803,8 +1103,6 @@ onMounted(() => {
   background: rgba(0, 0, 0, 0.55);
   z-index: 2;
 }
-
-/* AI反馈信息对话框 */
 .completion-feedback-bubble {
   position: absolute;
   left: 190px;
@@ -816,16 +1114,15 @@ onMounted(() => {
   font-size: 15px;
   line-height: 1.6;
   color: #333;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
 }
-.completion-feedback-bubble .feedback-message {
+.feedback-message {
   font-size: 14px;
   color: #333;
   line-height: 1.6;
   white-space: pre-line;
   margin: 0;
 }
-/* 跳转按钮栏 */
 .completion-action-bar {
   position: absolute;
   left: 190px;
