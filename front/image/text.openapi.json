@@ -1,0 +1,1286 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "文化探究语文课堂模块API",
+    "description": "包含登录、课堂节点、写写感想、初步感悟、AI对话、文件上传、创作工坊、学生成果互评接口",
+    "version": "1.3.0"
+  },
+  "tags": [
+    { "name": "账号模块", "description": "登录、登录状态校验" },
+    { "name": "首页导航", "description": "课程首页任务进度、导航节点状态" },
+    { "name": "学生课堂节点", "description": "所有课堂交互页面" },
+    { "name": "创作工坊", "description": "手抄报、古诗、剧本、文化讲解AI生成接口" },
+    { "name": "AI对话模块", "description": "会话创建、流式/非流式对话、历史上下文" },
+    { "name": "工具通用接口", "description": "文件上传下载、语音转写、OCR识别" },
+    { "name": "成果广场", "description": "学生作品发布、互评查看" }
+  ],
+  "paths": {
+    "/api/v1/accounts:login": {
+      "post": {
+        "tags": ["账号模块"],
+        "summary": "用户登录",
+        "deprecated": false,
+        "description": "学生账号登录，返回会话凭证",
+        "parameters": [
+          { "name": "username", "in": "query", "description": "【废弃】参数迁移至body", "required": false, "schema": { "type": "string" } },
+          { "name": "password", "in": "query", "description": "【废弃】参数迁移至body", "required": false, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "username": { "type": "string", "example": "admin" },
+                  "password": { "type": "string", "example": "123456" }
+                }
+              },
+              "example": { "username": "admin", "password": "123456" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": { "description": "登录成功", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/LoginResp" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        },
+        "security": []
+      }
+    },
+    "/api/v1/accounts:status": {
+      "get": {
+        "tags": ["账号模块"],
+        "summary": "获取用户登录状态",
+        "responses": {
+          "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Base200Resp" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/v1/stu/home": {
+      "get": {
+        "tags": ["首页导航"],
+        "summary": "获取课程首页导航任务进度",
+        "parameters": [ { "name": "classId", "in": "query", "required": true, "schema": { "type": "string" } } ],
+        "responses": {
+          "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/HomeProgressResp" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/v1/stu/class/{classId}/node/{nodeId}/video-intro": {
+      "get": {
+        "tags": ["学生课堂节点"],
+        "summary": "获取节点引导视频",
+        "parameters": [
+          { "name": "classId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "nodeId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/VideoIntroResp" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/v1/stu/class/{classId}/node/{nodeId}/write-thoughts": {
+      "get": {
+        "tags": ["学生课堂节点"],
+        "summary": "写写感想 - 获取页面状态",
+        "description": "返回课文导航、数字人状态、当前题目草稿、课文显示状态",
+        "parameters": [
+          { "name": "classId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "nodeId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/WriteThoughtStateResp" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      },
+      "patch": {
+        "tags": ["学生课堂节点"],
+        "summary": "写写感想 - 自动保存草稿",
+        "parameters": [
+          { "name": "classId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "nodeId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/WriteThoughtDraft" } } } },
+        "responses": {
+          "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Base200Resp" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/v1/stu/class/{classId}/node/{nodeId}/write-thoughts/{questionId}/submissions": {
+      "post": {
+        "tags": ["学生课堂节点"],
+        "summary": "写写感想 - 提交回答（异步批改）",
+        "parameters": [
+          { "name": "classId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "nodeId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "questionId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "id": { "type": "string" }, "input": { "type": "string" } }, "required": ["id", "input"] } } } },
+        "responses": {
+          "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AsyncSubmitResp" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/v1/stu/class/{classId}/node/{nodeId}/write-thoughts/{questionId}/submissions/{submitId}": {
+      "get": {
+        "tags": ["学生课堂节点"],
+        "summary": "写写感想 - 查询异步批改结果",
+        "parameters": [
+          { "name": "classId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "nodeId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "questionId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "submitId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/WriteThoughtSubmitStateResp" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/v1/stu/class/{classId}/node/{nodeId}/initial-insight": {
+      "get": {
+        "tags": ["学生课堂节点"],
+        "summary": "初步感悟 - 获取页面状态",
+        "parameters": [
+          { "name": "classId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "nodeId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/InitialInsightStateResp" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      },
+      "patch": {
+        "tags": ["学生课堂节点"],
+        "summary": "初步感悟 - 自动保存填空草稿",
+        "parameters": [
+          { "name": "classId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "nodeId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/InitialInsightDraft" } } } },
+        "responses": {
+          "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Base200Resp" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/v1/stu/class/{classId}/node/{nodeId}/initial-insight/{questionId}/submissions": {
+      "post": {
+        "tags": ["学生课堂节点"],
+        "summary": "初步感悟 - 提交填空答案",
+        "parameters": [
+          { "name": "classId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "nodeId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "questionId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/InitialInsightSubmission" } } } },
+        "responses": {
+          "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AsyncSubmitResp" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/v1/stu/class/{classId}/node/{nodeId}/initial-insight/{questionId}/submissions/{submitId}": {
+      "get": {
+        "tags": ["学生课堂节点"],
+        "summary": "初步感悟 - 查询填空批改结果",
+        "parameters": [
+          { "name": "classId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "nodeId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "questionId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "submitId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/InitialInsightSubmitStateResp" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/v1/stu/class/{classId}/node/{nodeId}/cultural-style": {
+      "get": {
+        "tags": ["学生课堂节点"],
+        "summary": "重温文化采风 - 获取页面状态（视频交互答题）",
+        "parameters": [
+          { "name": "classId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "nodeId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CulturalStyleStateResp" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/v1/stu/class/{classId}/node/{nodeId}/cultural-style/{questionId}/submissions": {
+      "post": {
+        "tags": ["学生课堂节点"],
+        "summary": "重温文化采风 - 提交答案",
+        "parameters": [
+          { "name": "classId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "nodeId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "questionId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CulturalStyleSubmission" } } } },
+        "responses": {
+          "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AsyncSubmitResp" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/v1/stu/class/{classId}/node/{nodeId}/cultural-style/{questionId}/submissions/{submitId}": {
+      "get": {
+        "tags": ["学生课堂节点"],
+        "summary": "重温文化采风 - 查询答题结果",
+        "parameters": [
+          { "name": "classId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "nodeId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "questionId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "submitId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CulturalStyleSubmitStateResp" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/v1/stu/class/{classId}/node/{nodeId}/zhaozhouqiao": {
+      "get": {
+        "tags": ["学生课堂节点"],
+        "summary": "学习《赵州桥》表达方法 - 获取页面状态",
+        "parameters": [
+          { "name": "classId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "nodeId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ZhaoZhouQiaoStateResp" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/v1/stu/class/{classId}/node/{nodeId}/zhaozhouqiao/{questionId}/submissions": {
+      "post": {
+        "tags": ["学生课堂节点"],
+        "summary": "赵州桥 - 提交语音回答",
+        "parameters": [
+          { "name": "classId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "nodeId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "questionId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/VoiceSubmission" } } } },
+        "responses": {
+          "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AsyncSubmitResp" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/v1/stu/class/{classId}/node/{nodeId}/zhaozhouqiao/{questionId}/submissions/{submitId}": {
+      "get": {
+        "tags": ["学生课堂节点"],
+        "summary": "赵州桥 - 查询批改结果",
+        "parameters": [
+          { "name": "classId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "nodeId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "questionId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "submitId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ZhaoZhouQiaoSubmitStateResp" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/v1/stu/class/{classId}/node/{nodeId}/wenmingzhongwai": {
+      "get": {
+        "tags": ["学生课堂节点"],
+        "summary": "学习《一幅名扬中外的画》表达方法 - 获取页面状态",
+        "parameters": [
+          { "name": "classId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "nodeId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/WenMingZhongWaiStateResp" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/v1/stu/class/{classId}/node/{nodeId}/wenmingzhongwai/{questionId}/submissions": {
+      "post": {
+        "tags": ["学生课堂节点"],
+        "summary": "一幅名扬中外的画 - 提交语音回答",
+        "parameters": [
+          { "name": "classId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "nodeId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "questionId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/VoiceSubmission" } } } },
+        "responses": {
+          "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AsyncSubmitResp" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/v1/stu/class/{classId}/node/{nodeId}/wenmingzhongwai/{questionId}/submissions/{submitId}": {
+      "get": {
+        "tags": ["学生课堂节点"],
+        "summary": "一幅名扬中外的画 - 查询批改结果",
+        "parameters": [
+          { "name": "classId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "nodeId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "questionId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "submitId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/WenMingZhongWaiSubmitStateResp" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/v1/stu/class/{classId}/node/{nodeId}/communicate": {
+      "get": {
+        "tags": ["学生课堂节点"],
+        "summary": "[课中交流] 获取对话页面状态与历史创作",
+        "parameters": [
+          { "name": "classId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "nodeId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/GetClassNodeTempData" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      },
+      "patch": {
+        "tags": ["学生课堂节点"],
+        "summary": "[课中交流] 自动保存草稿",
+        "parameters": [
+          { "name": "classId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "nodeId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "session": { "$ref": "#/components/schemas/SaveClassNodeTempData" } }, "required": ["session"] } } } },
+        "responses": {
+          "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Base200Resp" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/v1/stu/class/{classId}/node/{nodeId}/communicate/submissions": {
+      "post": {
+        "tags": ["学生课堂节点"],
+        "summary": "[课中交流] 提交创作，AI生成点评",
+        "parameters": [
+          { "name": "classId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "nodeId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SaveStudentCreateRequest" } } } },
+        "responses": {
+          "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/GetStudentCreateResponse" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/v1/stu/class/{classId}/node/{nodeId}/cultural_inheritance": {
+      "get": {
+        "tags": ["学生课堂节点"],
+        "summary": "[课后传承] 获取课后创作页面状态",
+        "parameters": [
+          { "name": "classId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "nodeId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/GetClassNodeTempData" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      },
+      "patch": {
+        "tags": ["学生课堂节点"],
+        "summary": "[课后传承] 保存临时创作草稿",
+        "parameters": [
+          { "name": "classId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "nodeId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "session": { "$ref": "#/components/schemas/SaveClassNodeTempData" } }, "required": ["session"] } } } },
+        "responses": {
+          "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Base200Resp" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/v1/stu/class/{classId}/node/{nodeId}/cultural_inheritance/submissions": {
+      "post": {
+        "tags": ["学生课堂节点"],
+        "summary": "[课后传承] 提交创作作品",
+        "parameters": [
+          { "name": "classId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "nodeId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/SaveStudentCreateRequest" } } } },
+        "responses": {
+          "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/GetStudentCreateResponse" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/v1/stu/class/{classId}/node/{nodeId}/creation-workshop": {
+      "get": {
+        "tags": ["创作工坊"],
+        "summary": "创作工坊首页信息",
+        "parameters": [
+          { "name": "classId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "nodeId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreationWorkshopStateResp" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/v1/stu/class/{classId}/node/{nodeId}/creation-workshop/task/creationSubmit": {
+      "post": {
+        "tags": ["创作工坊"],
+        "summary": "创作与分享提交（通用）",
+        "parameters": [
+          { "name": "classId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "nodeId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreationSubmit" } } } },
+        "responses": {
+          "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AsyncSubmitResp" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/v1/stu/class/{classId}/node/{nodeId}/creation-workshop/task/result": {
+      "get": {
+        "tags": ["创作工坊"],
+        "summary": "查询AI生成结果",
+        "parameters": [
+          { "name": "classId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "nodeId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AIResult" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/ai/session": {
+      "post": {
+        "tags": ["AI对话模块"],
+        "summary": "创建对话Session",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateSessionReq" } } } },
+        "responses": {
+          "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Base200Resp" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/ai/chat/{session}": {
+      "post": {
+        "tags": ["AI对话模块"],
+        "summary": "非流式对话",
+        "parameters": [ { "name": "session", "in": "path", "required": true, "schema": { "type": "string" } } ],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ChatReq" } } } },
+        "responses": {
+          "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ChatResp" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/ai/chat/stream/{session}": {
+      "post": {
+        "tags": ["AI对话模块"],
+        "summary": "流式对话",
+        "parameters": [ { "name": "session", "in": "path", "required": true, "schema": { "type": "string" } } ],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ChatReq" } } } },
+        "responses": {
+          "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/StreamChatMessage" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/ai/context": {
+      "get": {
+        "tags": ["AI对话模块"],
+        "summary": "获取Session历史上下文",
+        "parameters": [ { "name": "session", "in": "query", "required": true, "schema": { "type": "string" } } ],
+        "responses": {
+          "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/GetSessionContextResp" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/utils/transcriptions/{resourceId}": {
+      "get": {
+        "tags": ["工具通用接口"],
+        "summary": "获取语音转写结果",
+        "parameters": [ { "name": "resourceId", "in": "path", "required": true, "schema": { "type": "string" } } ],
+        "responses": {
+          "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UtilsTranscriptionsResp" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/utils/upload": {
+      "post": {
+        "tags": ["工具通用接口"],
+        "summary": "文件上传（音频、图片）",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": { "type": "string", "format": "binary" },
+                  "media_type": { "type": "string" },
+                  "resource_source": { "type": "string" },
+                  "resource_info": { "type": "string" },
+                  "image_compress": { "type": "boolean" },
+                  "video_compress": { "type": "boolean" },
+                  "upload_oss": { "type": "boolean" }
+                },
+                "required": ["file", "media_type", "resource_source"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UtilsUploadResp" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/utils/download/{id}": {
+      "get": {
+        "tags": ["工具通用接口"],
+        "summary": "文件下载",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "name": "url_expired", "in": "query", "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UtilsDownloadResp" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/utils/ocr": {
+      "post": {
+        "tags": ["工具通用接口"],
+        "summary": "图片OCR识别",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "resourceId": { "type": "string" } }, "required": ["resourceId"] } } } },
+        "responses": {
+          "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OCRResp" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/stu/work/publish": {
+      "post": {
+        "tags": ["成果广场"],
+        "summary": "发布学生创作作品到互评广场",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "classId": { "type": "string" }, "createId": { "type": "string" }, "content": { "type": "string" } }, "required": ["classId", "createId"] } } } },
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Base200Resp" } } } } }
+      }
+    },
+    "/api/stu/work/list": {
+      "get": {
+        "tags": ["成果广场"],
+        "summary": "获取班级所有学生发布作品",
+        "parameters": [ { "name": "classId", "in": "query", "required": true, "schema": { "type": "string" } } ],
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/WorkListResp" } } } } }
+      }
+    },
+    "/api/stu/work/{workId}/detail": {
+      "get": {
+        "tags": ["成果广场"],
+        "summary": "查看作品详情",
+        "parameters": [ { "name": "workId", "in": "path", "required": true, "schema": { "type": "string" } } ],
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/WorkDetailResp" } } } } }
+      }
+    },
+    "/api/stu/work/comment": {
+      "post": {
+        "tags": ["成果广场"],
+        "summary": "给同学作品点评",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "properties": { "workId": { "type": "string" }, "commentText": { "type": "string" } }, "required": ["workId", "commentText"] } } } },
+        "responses": { "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Base200Resp" } } } } }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Base200Resp": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "integer", "const": 200 },
+          "msg": { "type": "string", "nullable": true },
+          "data": {}
+        }
+      },
+      "LoginResp": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "integer", "const": 200 },
+          "msg": { "type": "string", "nullable": true },
+          "data": { "type": "object", "properties": { "token": { "type": "string" }, "userId": { "type": "string" }, "userName": { "type": "string" } } }
+        }
+      },
+      "HomeProgressResp": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "integer", "const": 200 },
+          "msg": { "type": "string", "nullable": true },
+          "data": { "type": "array", "items": { "type": "object", "properties": { "nodeId": { "type": "string" }, "nodeName": { "type": "string" }, "status": { "type": "string", "enum": ["locked", "unlocked", "completed"] } } } }
+        }
+      },
+      "VideoIntroResp": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "integer", "const": 200 },
+          "msg": { "type": "string", "nullable": true },
+          "data": { "$ref": "#/components/schemas/VideoIntroData" }
+        }
+      },
+      "VideoIntroData": {
+        "type": "object",
+        "properties": {
+          "videoUrl": { "type": "string" },
+          "poster": { "type": "string" },
+          "duration": { "type": "integer" }
+        }
+      },
+      "WriteThoughtStateResp": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "integer", "const": 200 },
+          "msg": { "type": "string", "nullable": true },
+          "data": { "$ref": "#/components/schemas/WriteThoughtState" }
+        }
+      },
+      "WriteThoughtState": {
+        "type": "object",
+        "properties": {
+          "lessons": { "type": "array", "items": { "$ref": "#/components/schemas/LessonNavItem" } },
+          "digitalHuman": { "$ref": "#/components/schemas/DigitalHumanState" },
+          "currentQuestion": { "$ref": "#/components/schemas/CurrentQuestion" },
+          "allCompleted": { "type": "boolean" }
+        }
+      },
+      "LessonNavItem": {
+        "type": "object",
+        "properties": {
+          "lessonId": { "type": "string" },
+          "lessonName": { "type": "string" },
+          "status": { "type": "string", "enum": ["locked", "available", "current", "completed"] },
+          "content": { "type": "string" }
+        }
+      },
+      "DigitalHumanState": {
+        "type": "object",
+        "properties": {
+          "avatarUrl": { "type": "string" },
+          "currentMessage": { "type": "string" },
+          "audioUrl": { "type": "string" },
+          "isSpeaking": { "type": "boolean" }
+        }
+      },
+      "CurrentQuestion": {
+        "type": "object",
+        "properties": {
+          "questionId": { "type": "string" },
+          "title": { "type": "string" },
+          "instruction": { "type": "string" },
+          "inputDraft": { "type": "string" },
+          "isTextVisible": { "type": "boolean" },
+          "submitCount": { "type": "integer" },
+          "status": { "type": "string", "enum": ["pending", "submitted", "passed", "failed"] }
+        }
+      },
+      "WriteThoughtDraft": {
+        "type": "object",
+        "properties": {
+          "lessonVisibility": { "type": "object" },
+          "inputDraft": { "type": "string" },
+          "questionId": { "type": "string" }
+        }
+      },
+      "WriteThoughtSubmitStateResp": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "integer", "const": 200 },
+          "msg": { "type": "string", "nullable": true },
+          "data": { "$ref": "#/components/schemas/WriteThoughtSubmitResult" }
+        }
+      },
+      "WriteThoughtSubmitResult": {
+        "type": "object",
+        "properties": {
+          "submitId": { "type": "string" },
+          "isPassed": { "type": "boolean" },
+          "correction": { "type": "object", "properties": { "text": { "type": "string" }, "audioUrl": { "type": "string" }, "referenceAnswer": { "type": "string" } } },
+          "digitalHumanAction": { "$ref": "#/components/schemas/DigitalHumanAction" },
+          "unlockNextQuestion": { "type": "boolean" },
+          "nextQuestionId": { "type": "string", "nullable": true },
+          "finalSummary": { "type": "string", "nullable": true },
+          "finalAudioUrl": { "type": "string", "nullable": true }
+        }
+      },
+      "DigitalHumanAction": {
+        "type": "object",
+        "properties": {
+          "speakText": { "type": "string" },
+          "audioUrl": { "type": "string" },
+          "hideLesson": { "type": "boolean" },
+          "showLesson": { "type": "boolean" }
+        }
+      },
+      "InitialInsightStateResp": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "integer", "const": 200 },
+          "msg": { "type": "string", "nullable": true },
+          "data": { "$ref": "#/components/schemas/InitialInsightState" }
+        }
+      },
+      "InitialInsightState": {
+        "type": "object",
+        "properties": {
+          "lessons": { "type": "array", "items": { "$ref": "#/components/schemas/LessonNavItem" } },
+          "digitalHuman": { "$ref": "#/components/schemas/DigitalHumanState" },
+          "fillItems": { "type": "array", "items": { "$ref": "#/components/schemas/FillItem" } },
+          "canSubmit": { "type": "boolean" },
+          "allCompleted": { "type": "boolean" }
+        }
+      },
+      "FillItem": {
+        "type": "object",
+        "properties": {
+          "slotId": { "type": "string" },
+          "questionId": { "type": "string" },
+          "hint": { "type": "string" },
+          "status": { "type": "string", "enum": ["locked", "active", "correct", "wrong", "autoFilled"] },
+          "inputDraft": { "type": "string", "nullable": true },
+          "correctAnswer": { "type": "string", "nullable": true }
+        }
+      },
+      "InitialInsightDraft": {
+        "type": "object",
+        "properties": {
+          "slotId": { "type": "string" },
+          "input": { "type": "string" }
+        }
+      },
+      "InitialInsightSubmission": {
+        "type": "object",
+        "properties": {
+          "inputs": {
+            "type": "array",
+            "items": { "type": "object", "properties": { "id": { "type": "string" }, "slotId": { "type": "string" }, "input": { "type": "string" } }, "required": ["id", "input", "slotId"] }
+          }
+        }
+      },
+      "InitialInsightSubmitStateResp": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "integer", "const": 200 },
+          "msg": { "type": "string", "nullable": true },
+          "data": { "$ref": "#/components/schemas/InitialInsightSubmitResult" }
+        }
+      },
+      "InitialInsightSubmitResult": {
+        "type": "object",
+        "properties": {
+          "slotId": { "type": "string" },
+          "status": { "type": "string", "enum": ["correct", "incorrect", "autoFilled"] },
+          "message": { "type": "string" },
+          "digitalHumanAction": { "$ref": "#/components/schemas/DigitalHumanAction" },
+          "unlockNextSlot": { "type": "boolean" },
+          "nextSlotId": { "type": "string", "nullable": true },
+          "finalSummary": { "type": "string", "nullable": true }
+        }
+      },
+      "CulturalStyleStateResp": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "integer", "const": 200 },
+          "msg": { "type": "string", "nullable": true },
+          "data": { "$ref": "#/components/schemas/CulturalStyleState" }
+        }
+      },
+      "CulturalStyleState": {
+        "type": "object",
+        "properties": {
+          "videoUrl": { "type": "string" },
+          "videoDuration": { "type": "integer" },
+          "questions": { "type": "array", "items": { "$ref": "#/components/schemas/CulturalStyleQuestion" } },
+          "digitalHuman": { "$ref": "#/components/schemas/DigitalHumanState" },
+          "allCompleted": { "type": "boolean" }
+        }
+      },
+      "CulturalStyleQuestion": {
+        "type": "object",
+        "properties": {
+          "questionId": { "type": "string" },
+          "triggerTime": { "type": "integer" },
+          "type": { "type": "string", "enum": ["choice", "order", "drag"] },
+          "options": { "type": "array", "items": { "type": "object" } },
+          "status": { "type": "string", "enum": ["pending", "correct", "incorrect", "skipped"] }
+        }
+      },
+      "CulturalStyleSubmission": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "type": { "type": "string", "enum": ["choice", "order", "drag"] },
+          "input": { "anyOf": [ { "type": "string" }, { "type": "array", "items": { "type": "string" } } ] }
+        },
+        "required": ["id", "input", "type"]
+      },
+      "CulturalStyleSubmitStateResp": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "integer", "const": 200 },
+          "msg": { "type": "string", "nullable": true },
+          "data": { "$ref": "#/components/schemas/CulturalStyleSubmitResult" }
+        }
+      },
+      "CulturalStyleSubmitResult": {
+        "type": "object",
+        "properties": {
+          "status": { "type": "string" },
+          "correctAnswer": { "type": "string" },
+          "explanation": { "type": "string" },
+          "digitalHumanAction": { "$ref": "#/components/schemas/DigitalHumanAction" },
+          "closeAfter": { "type": "integer" }
+        }
+      },
+      "ZhaoZhouQiaoStateResp": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "integer", "const": 200 },
+          "msg": { "type": "string", "nullable": true },
+          "data": { "$ref": "#/components/schemas/ZhaoZhouQiaoState" }
+        }
+      },
+      "ZhaoZhouQiaoState": {
+        "type": "object",
+        "properties": {
+          "lesson": { "type": "object", "properties": { "lessonId": { "type": "string" }, "content": { "type": "string" } } },
+          "digitalHuman": { "$ref": "#/components/schemas/DigitalHumanState" },
+          "cards": { "type": "array", "items": { "$ref": "#/components/schemas/ZhaoZhouQiaoCard" } },
+          "finalAnimation": { "type": "object", "properties": { "url": { "type": "string" }, "isGif": { "type": "boolean" } } },
+          "allCompleted": { "type": "boolean" }
+        }
+      },
+      "ZhaoZhouQiaoCard": {
+        "type": "object",
+        "properties": {
+          "cardId": { "type": "string" },
+          "question": { "type": "string" },
+          "status": { "type": "string", "enum": ["locked", "active", "correct", "autoFilled", "wrong"] },
+          "inputDraft": { "type": "string" },
+          "submitCount": { "type": "integer" },
+          "answerSource": { "type": "string", "enum": ["student", "system"] },
+          "collapsed": { "type": "boolean" }
+        }
+      },
+      "VoiceSubmission": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "input": { "type": "string" },
+          "audioResourceId": { "type": "string" }
+        },
+        "required": ["id", "input"]
+      },
+      "ZhaoZhouQiaoSubmitStateResp": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "integer", "const": 200 },
+          "msg": { "type": "string", "nullable": true },
+          "data": { "$ref": "#/components/schemas/ZhaoZhouQiaoSubmitResult" }
+        }
+      },
+      "ZhaoZhouQiaoSubmitResult": {
+        "type": "object",
+        "properties": {
+          "cardId": { "type": "string" },
+          "status": { "type": "string" },
+          "correctionText": { "type": "string" },
+          "digitalHumanAction": { "$ref": "#/components/schemas/DigitalHumanAction" },
+          "autoAnswer": { "type": "string", "nullable": true },
+          "askForHint": { "type": "boolean" },
+          "unlockNextCard": { "type": "boolean" },
+          "finalReview": { "type": "string", "nullable": true }
+        }
+      },
+      "WenMingZhongWaiStateResp": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "integer", "const": 200 },
+          "msg": { "type": "string", "nullable": true },
+          "data": { "$ref": "#/components/schemas/WenMingZhongWaiState" }
+        }
+      },
+      "WenMingZhongWaiState": {
+        "type": "object",
+        "properties": {
+          "lesson": { "type": "object", "properties": { "lessonId": { "type": "string" }, "content": { "type": "string" } } },
+          "digitalHuman": { "$ref": "#/components/schemas/DigitalHumanState" },
+          "inputs": { "type": "array", "items": { "$ref": "#/components/schemas/WenMingZhongWaiInput" } },
+          "canSubmit": { "type": "boolean" },
+          "summaryVideo": { "type": "object", "properties": { "videoUrl": { "type": "string" }, "poster": { "type": "string" } } },
+          "finalActions": { "type": "array", "items": { "type": "string", "enum": ["rewatch", "viewReport", "goHome"] } }
+        }
+      },
+      "WenMingZhongWaiInput": {
+        "type": "object",
+        "properties": {
+          "inputId": { "type": "string" },
+          "prompt": { "type": "string" },
+          "status": { "type": "string", "enum": ["empty", "active", "error", "correct"] },
+          "errorHint": { "type": "string", "nullable": true },
+          "draft": { "type": "string", "nullable": true }
+        }
+      },
+      "WenMingZhongWaiSubmitStateResp": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "integer", "const": 200 },
+          "msg": { "type": "string", "nullable": true },
+          "data": { "$ref": "#/components/schemas/WenMingZhongWaiSubmitResult" }
+        }
+      },
+      "WenMingZhongWaiSubmitResult": {
+        "type": "object",
+        "properties": {
+          "inputId": { "type": "string" },
+          "status": { "type": "string" },
+          "errorHint": { "type": "string" },
+          "digitalHumanAction": { "$ref": "#/components/schemas/DigitalHumanAction" },
+          "allCorrect": { "type": "boolean" },
+          "summaryVideoUrl": { "type": "string" },
+          "finalReview": { "type": "string" }
+        }
+      },
+      "GetClassNodeTempData": {
+        "type": "object",
+        "properties": {
+          "userId": { "type": "string" },
+          "classId": { "type": "string" },
+          "scene": { "type": "string", "enum": ["inclass", "afterclass"] },
+          "progressJson": { "type": "object" },
+          "historyChatList": { "type": "array", "items": { "type": "object" } },
+          "historyCreateList": { "type": "array", "items": { "$ref": "#/components/schemas/StudentCreationRecord" } },
+          "attemptCount": { "type": "integer" }
+        }
+      },
+      "StudentCreationRecord": {
+        "type": "object",
+        "properties": {
+          "createId": { "type": "string" },
+          "createType": { "type": "string" },
+          "content": { "type": "string", "nullable": true },
+          "fileUrlList": { "type": "array", "items": { "type": "string" } },
+          "aiComment": { "type": "string", "nullable": true },
+          "submitTime": { "type": "string" },
+          "status": { "type": "string", "enum": ["pending", "approved", "rejected", "optimized"] },
+          "aiRevisedContent": { "type": "string", "nullable": true },
+          "audioUrl": { "type": "string", "nullable": true }
+        }
+      },
+      "SaveClassNodeTempData": {
+        "type": "object",
+        "properties": {
+          "userId": { "type": "string" },
+          "classId": { "type": "string" },
+          "scene": { "type": "string" },
+          "progressJson": { "type": "object" }
+        }
+      },
+      "SaveStudentCreateRequest": {
+        "type": "object",
+        "properties": {
+          "userId": { "type": "string" },
+          "classId": { "type": "string" },
+          "createType": { "type": "string" },
+          "content": { "type": "string", "nullable": true },
+          "fileIdList": { "type": "array", "items": { "type": "string" } }
+        }
+      },
+      "GetStudentCreateResponse": {
+        "type": "object",
+        "properties": {
+          "createId": { "type": "string" },
+          "aiComment": { "type": "string", "nullable": true },
+          "submitTime": { "type": "string" },
+          "audioUrl": { "type": "string", "nullable": true }
+        }
+      },
+      "CreationWorkshopStateResp": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "integer", "const": 200 },
+          "msg": { "type": "string", "nullable": true },
+          "data": {
+            "type": "object",
+            "properties": {
+              "video": { "type": "object", "properties": { "videoUrl": { "type": "string" } } },
+              "workshopId": { "type": "string" },
+              "tasks": { "type": "array", "items": { "$ref": "#/components/schemas/WorkshopTask" } }
+            }
+          }
+        }
+      },
+      "WorkshopTask": {
+        "type": "object",
+        "properties": {
+          "taskId": { "type": "string" },
+          "taskType": { "type": "string", "enum": ["handcopy", "poem", "introduction", "script", "share"] },
+          "title": { "type": "string" },
+          "completed": { "type": "boolean" }
+        }
+      },
+      "CreationSubmit": {
+        "type": "object",
+        "properties": {
+          "taskStyle": { "type": "string", "description": "handcopy/poem/script/share/introduction" },
+          "sceneDesc": { "type": "string", "nullable": true },
+          "textContent": { "type": "string" }
+        },
+        "required": ["taskStyle", "textContent"]
+      },
+      "AIResult": {
+        "type": "object",
+        "properties": {
+          "isProcessing": { "type": "boolean" },
+          "Success": { "type": "boolean" },
+          "imageUrl": { "type": "string" }
+        }
+      },
+      "CreateSessionReq": { "type": "object" },
+      "ChatReq": {
+        "type": "object",
+        "properties": {
+          "messages": { "$ref": "#/components/schemas/AIMessages" },
+          "prompt": { "type": "string" }
+        }
+      },
+      "AIMessages": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "role": { "type": "string" },
+            "content": { "type": "string" },
+            "references": { "type": "array", "items": { "$ref": "#/components/schemas/AISearchReference" }, "nullable": true }
+          }
+        }
+      },
+      "AISearchReference": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "title": { "type": "string" },
+          "link": { "type": "string", "format": "uri" },
+          "snippet": { "type": "string", "nullable": true }
+        }
+      },
+      "ChatResp": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "choices": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "finish_reason": { "type": "string" },
+                "index": { "type": "integer" },
+                "message": { "type": "object", "properties": { "role": { "type": "string" }, "content": { "type": "string" } } }
+              }
+            }
+          }
+        }
+      },
+      "StreamChatMessage": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "choices": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "delta": { "type": "object", "properties": { "content": { "type": "string" }, "role": { "type": "string", "nullable": true } } },
+                "finish_reason": { "type": "string", "nullable": true },
+                "index": { "type": "integer" }
+              }
+            }
+          },
+          "created": { "type": "integer" },
+          "usage": {
+            "type": "object",
+            "properties": {
+              "completion_tokens": { "type": "integer", "nullable": true },
+              "prompt_tokens": { "type": "integer", "nullable": true },
+              "total_tokens": { "type": "integer", "nullable": true }
+            },
+            "nullable": true
+          },
+          "references": { "type": "array", "items": { "$ref": "#/components/schemas/AISearchReference" }, "nullable": true }
+        }
+      },
+      "GetSessionContextResp": {
+        "type": "object",
+        "properties": {
+          "context": { "$ref": "#/components/schemas/AIMessages" }
+        }
+      },
+      "UtilsUploadResp": {
+        "type": "object",
+        "properties": {
+          "resourceId": { "type": "string" },
+          "url": { "type": "string" }
+        }
+      },
+      "UtilsDownloadResp": {
+        "type": "object",
+        "properties": {
+          "url": { "type": "string" }
+        }
+      },
+      "UtilsTranscriptionsResp": {
+        "type": "object",
+        "properties": {
+          "text": { "type": "string" }
+        }
+      },
+      "OCRResp": {
+        "type": "object",
+        "properties": {
+          "text": { "type": "string" }
+        }
+      },
+      "AsyncSubmitResp": {
+        "type": "object",
+        "properties": {
+          "submitId": { "type": "string" },
+          "tip": { "type": "string" }
+        }
+      },
+      "WorkListResp": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "integer", "const": 200 },
+          "msg": { "type": "string", "nullable": true },
+          "data": { "type": "array", "items": { "$ref": "#/components/schemas/WorkSummary" } }
+        }
+      },
+      "WorkSummary": {
+        "type": "object",
+        "properties": {
+          "workId": { "type": "string" },
+          "studentName": { "type": "string" },
+          "content": { "type": "string" },
+          "publishTime": { "type": "string" },
+          "likeCount": { "type": "integer" },
+          "commentCount": { "type": "integer" }
+        }
+      },
+      "WorkDetailResp": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "integer", "const": 200 },
+          "msg": { "type": "string", "nullable": true },
+          "data": { "$ref": "#/components/schemas/WorkDetail" }
+        }
+      },
+      "WorkDetail": {
+        "type": "object",
+        "properties": {
+          "workId": { "type": "string" },
+          "studentName": { "type": "string" },
+          "content": { "type": "string" },
+          "images": { "type": "array", "items": { "type": "string" } },
+          "publishTime": { "type": "string" },
+          "comments": { "type": "array", "items": { "$ref": "#/components/schemas/Comment" } }
+        }
+      },
+      "Comment": {
+        "type": "object",
+        "properties": {
+          "commentId": { "type": "string" },
+          "studentName": { "type": "string" },
+          "text": { "type": "string" },
+          "time": { "type": "string" }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": { "description": "请求参数错误", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error400" } } } },
+      "Unauthorized": { "description": "认证失败", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error401" } } } },
+      "InternalServerError": { "description": "服务器错误", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error500" } } } }
+    },
+    "securitySchemes": {
+      "Authorization": { "type": "apiKey", "in": "header", "name": "Authorization" }
+    }
+  }
+}

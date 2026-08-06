@@ -1,0 +1,4723 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "默认模块",
+    "description": "",
+    "version": "1.0.0"
+  },
+  "tags": [],
+  "paths": {
+    "/api/v1/accounts:login": {
+      "post": {
+        "summary": "用户登录",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "username",
+            "in": "query",
+            "description": "",
+            "required": false,
+            "example": "",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "password",
+            "in": "query",
+            "description": "",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "username": {
+                    "example": "admin",
+                    "type": "string"
+                  },
+                  "password": {
+                    "example": "123456",
+                    "type": "string"
+                  }
+                }
+              },
+              "example": {
+                "username": "admin",
+                "password": "123456"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            },
+            "headers": {}
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized",
+            "description": ""
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/v1/accounts:status": {
+      "get": {
+        "summary": "获取用户登录状态",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Base200Resp"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized",
+            "description": ""
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError",
+            "description": "服务端错误"
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/v1/stu/class/{classId}/node/{nodeId}/write-thoughts": {
+      "get": {
+        "summary": "获取状态",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "classId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "nodeId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "const": 200,
+                      "description": "HTTP 状态码为 200 时，响应中的 code 也一定为 200"
+                    },
+                    "msg": {
+                      "type": "string",
+                      "description": "供内部记录、日志等使用的消息，可以为 null\n",
+                      "nullable": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/WriteThoughtState",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "msg",
+                    "data"
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": ""
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized",
+            "description": ""
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError",
+            "description": "服务端错误"
+          }
+        },
+        "security": []
+      },
+      "patch": {
+        "summary": "自动保存回答",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "classId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "nodeId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Inputs"
+              },
+              "examples": {}
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "const": 200,
+                      "description": "HTTP 状态码为 200 时，响应中的 code 也一定为 200"
+                    },
+                    "msg": {
+                      "type": "string",
+                      "description": "供内部记录、日志等使用的消息，可以为 null\n",
+                      "nullable": true
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "msg"
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": ""
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized",
+            "description": ""
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError",
+            "description": "服务端错误"
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/v1/stu/class/{classId}/node/{nodeId}/write-thoughts/{questionId}/submissions": {
+      "post": {
+        "summary": "提交回答",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "classId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "nodeId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "questionId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "input": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "input",
+                  "id"
+                ]
+              },
+              "examples": {}
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "const": 200,
+                      "description": "HTTP 状态码为 200 时，响应中的 code 也一定为 200"
+                    },
+                    "msg": {
+                      "type": "string",
+                      "description": "供内部记录、日志等使用的消息，可以为 null\n",
+                      "nullable": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/AsyncSubmitResp"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "msg",
+                    "data"
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": ""
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized",
+            "description": ""
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError",
+            "description": "服务端错误"
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/v1/stu/class/{classid}/node/{nodeid}/write-thoughts/{questionId}/submissions/{submitId}": {
+      "get": {
+        "summary": "查询提交结果",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "classid",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "nodeid",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "questionId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "submitId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "const": 200,
+                      "description": "HTTP 状态码为 200 时，响应中的 code 也一定为 200"
+                    },
+                    "msg": {
+                      "type": "string",
+                      "description": "供内部记录、日志等使用的消息，可以为 null\n",
+                      "nullable": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/AsyncSubmitStateResp"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "msg",
+                    "data"
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": ""
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError",
+            "description": "服务端错误"
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/v1/stu/class/{classid}/node/{nodeid}/initial-insight": {
+      "get": {
+        "summary": "获取状态",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "classid",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "nodeid",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "const": 200,
+                      "description": "HTTP 状态码为 200 时，响应中的 code 也一定为 200"
+                    },
+                    "msg": {
+                      "type": "string",
+                      "description": "供内部记录、日志等使用的消息，可以为 null\n",
+                      "nullable": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/InitialInsightState"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "msg",
+                    "data"
+                  ]
+                },
+                "example": {
+                  "code": 200,
+                  "msg": null,
+                  "data": {
+                    "title": "初步感悟",
+                    "videos": [
+                      {
+                        "id": "6",
+                        "title": "以以免简直直到整",
+                        "src": "http://xxxxxxxxxxx",
+                        "thumbnail": "http://xxxxxxxxxx"
+                      },
+                      {
+                        "id": "100",
+                        "title": "虽然因此坏聪明嗯嗯拧甚至",
+                        "src": "http://xxxxxxxxxxx",
+                        "thumbnail": "http://xxxxxxxxxx"
+                      },
+                      {
+                        "id": "86",
+                        "title": "在到棒呆打如果好难道所以的红",
+                        "src": "http://xxxxxxxxxxx",
+                        "thumbnail": "http://xxxxxxxxxx"
+                      }
+                    ],
+                    "passages": [
+                      {
+                        "id": "17",
+                        "type": "content",
+                        "content": "造纸术的发明..."
+                      },
+                      {
+                        "id": "92",
+                        "type": "input",
+                        "inputs": [
+                          null,
+                          {
+                            "id": "19",
+                            "title": "作为哼出生托架捣也不",
+                            "placeholder": null,
+                            "value": "occaecat Lorem Duis commodo"
+                          },
+                          {
+                            "id": "79",
+                            "title": "协助哎哟虽然胡说向下",
+                            "placeholder": "ex sunt sint ad",
+                            "value": null
+                          }
+                        ]
+                      },
+                      {
+                        "id": "59",
+                        "type": "questions",
+                        "questions": [
+                          {
+                            "id": "95",
+                            "order": 1,
+                            "content": "一、在《赵州桥》中...",
+                            "template": "作者详细介绍了桥面...{{s}}"
+                          }
+                        ],
+                        "inputs": [
+                          null
+                        ]
+                      }
+                    ]
+                  }
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": ""
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError",
+            "description": "服务端错误"
+          }
+        },
+        "security": []
+      },
+      "patch": {
+        "summary": "自动保存回答",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "classid",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "nodeid",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Inputs"
+              },
+              "examples": {}
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "const": 200,
+                      "description": "HTTP 状态码为 200 时，响应中的 code 也一定为 200"
+                    },
+                    "msg": {
+                      "type": "string",
+                      "description": "供内部记录、日志等使用的消息，可以为 null\n",
+                      "nullable": true
+                    },
+                    "data": {
+                      "type": "null"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "msg",
+                    "data"
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": ""
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError",
+            "description": "服务端错误"
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/v1/stu/class/{classId}/node/{nodeId}/initial-insight/{questionId}/submissions": {
+      "post": {
+        "summary": "提交回答",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "classId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "nodeId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "questionId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "inputs": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "slotId": {
+                          "type": "string",
+                          "description": "文段占位符"
+                        },
+                        "input": {
+                          "type": "string",
+                          "description": "用户输入值"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "input",
+                        "slotId"
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "inputs"
+                ]
+              },
+              "examples": {}
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "const": 200,
+                      "description": "HTTP 状态码为 200 时，响应中的 code 也一定为 200"
+                    },
+                    "msg": {
+                      "type": "string",
+                      "description": "供内部记录、日志等使用的消息，可以为 null\n",
+                      "nullable": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/AsyncSubmitResp"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "msg",
+                    "data"
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": ""
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError",
+            "description": "服务端错误"
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/v1/stu/class/{classid}/node/{nodeid}/initial-insight/{questionId}/submissions/{submitId}": {
+      "get": {
+        "summary": "获取提交结果",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "classid",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "nodeid",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "questionId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "submitId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "const": 200,
+                      "description": "HTTP 状态码为 200 时，响应中的 code 也一定为 200"
+                    },
+                    "msg": {
+                      "type": "string",
+                      "description": "供内部记录、日志等使用的消息，可以为 null\n",
+                      "nullable": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/AsyncSubmitStateResp"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "msg",
+                    "data"
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": ""
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError",
+            "description": "服务端错误"
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/v1/stu/class/{classid}/node/{nodeid}/cultural-style": {
+      "get": {
+        "summary": "获取状态",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "classid",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "nodeid",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "const": 200,
+                      "description": "HTTP 状态码为 200 时，响应中的 code 也一定为 200"
+                    },
+                    "msg": {
+                      "type": "string",
+                      "description": "供内部记录、日志等使用的消息，可以为 null\n",
+                      "nullable": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/CulturalStyleState"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "msg",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": ""
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError",
+            "description": "服务端错误"
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/v1/stu/class/{classid}/node/{nodeid}/cultural-style/{questionId}/submissions": {
+      "post": {
+        "summary": "提交回答",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "classid",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "nodeid",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "questionId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "choice",
+                      "order"
+                    ]
+                  },
+                  "input": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "description": "选项id"
+                      },
+                      {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "description": "选项id"
+                        },
+                        "description": "选项id数组"
+                      }
+                    ],
+                    "description": "学生回答"
+                  }
+                },
+                "required": [
+                  "id",
+                  "input",
+                  "type"
+                ]
+              },
+              "examples": {}
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "const": 200,
+                      "description": "HTTP 状态码为 200 时，响应中的 code 也一定为 200"
+                    },
+                    "msg": {
+                      "type": "string",
+                      "description": "供内部记录、日志等使用的消息，可以为 null\n",
+                      "nullable": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/AsyncSubmitResp",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "msg",
+                    "data"
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": ""
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError",
+            "description": "服务端错误"
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/v1/stu/class/{classId}/node/{nodeId}/cultural-style/{questionId}/submissions/{submitId}": {
+      "get": {
+        "summary": "查询提交结果",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "classId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "nodeId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "questionId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "submitId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "const": 200,
+                      "description": "HTTP 状态码为 200 时，响应中的 code 也一定为 200"
+                    },
+                    "msg": {
+                      "type": "string",
+                      "description": "供内部记录、日志等使用的消息，可以为 null\n",
+                      "nullable": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/AsyncSubmitStateResp"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "msg",
+                    "data"
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": ""
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError",
+            "description": "服务端错误"
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/v1/stu/class/{classid}/node/{nodeid}/zhaozhouqiao": {
+      "get": {
+        "summary": "获取状态",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "classid",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "nodeid",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "const": 200,
+                      "description": "HTTP 状态码为 200 时，响应中的 code 也一定为 200"
+                    },
+                    "msg": {
+                      "type": "string",
+                      "description": "供内部记录、日志等使用的消息，可以为 null\n",
+                      "nullable": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ZhaoZhouQiaoState"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "msg",
+                    "data"
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": ""
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError",
+            "description": "服务端错误"
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/v1/stu/class/{classid}/node/{nodeid}/zhaozhouqiao/{questionId}/submissions": {
+      "post": {
+        "summary": "提交回答",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "classid",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "nodeid",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "questionId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "input": {
+                    "type": "string",
+                    "description": "学生回答"
+                  }
+                },
+                "required": [
+                  "input",
+                  "id"
+                ]
+              },
+              "examples": {}
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "const": 200,
+                      "description": "HTTP 状态码为 200 时，响应中的 code 也一定为 200"
+                    },
+                    "msg": {
+                      "type": "string",
+                      "description": "供内部记录、日志等使用的消息，可以为 null\n",
+                      "nullable": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/AsyncSubmitResp"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "msg",
+                    "data"
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": ""
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError",
+            "description": "服务端错误"
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/v1/stu/class/{classid}/node/{nodeid}/zhaozhouqiao/{questionId}/submissions/{submitId}": {
+      "get": {
+        "summary": "查询提交状态",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "classid",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "nodeid",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "questionId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "submitId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "const": 200,
+                      "description": "HTTP 状态码为 200 时，响应中的 code 也一定为 200"
+                    },
+                    "msg": {
+                      "type": "string",
+                      "description": "供内部记录、日志等使用的消息，可以为 null\n",
+                      "nullable": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/AsyncSubmitStateResp"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "msg",
+                    "data"
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": ""
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError",
+            "description": "服务端错误"
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/v1/stu/class/{classid}/node/{nodeid}/wenmingzhongwai": {
+      "get": {
+        "summary": "获取状态",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "classid",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "nodeid",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "const": 200,
+                      "description": "HTTP 状态码为 200 时，响应中的 code 也一定为 200"
+                    },
+                    "msg": {
+                      "type": "string",
+                      "description": "供内部记录、日志等使用的消息，可以为 null\n",
+                      "nullable": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ZhaoZhouQiaoState"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "msg",
+                    "data"
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": ""
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError",
+            "description": "服务端错误"
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/v1/stu/class/{classid}/node/{nodeid}/wenmingzhongwai/{questionId}/submissions": {
+      "post": {
+        "summary": "提交回答",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "classid",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "nodeid",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "questionId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "input": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "id",
+                  "input"
+                ]
+              },
+              "examples": {}
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "const": 200,
+                      "description": "HTTP 状态码为 200 时，响应中的 code 也一定为 200"
+                    },
+                    "msg": {
+                      "type": "string",
+                      "description": "供内部记录、日志等使用的消息，可以为 null\n",
+                      "nullable": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/AsyncSubmitResp"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "msg",
+                    "data"
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": ""
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError",
+            "description": "服务端错误"
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/v1/stu/class/{classid}/node/{nodeid}/wenmingzhongwai/{questionId}/submissions/{submitId}": {
+      "get": {
+        "summary": "查询提交状态",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "classid",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "nodeid",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "questionId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "submitId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "const": 200,
+                      "description": "HTTP 状态码为 200 时，响应中的 code 也一定为 200"
+                    },
+                    "msg": {
+                      "type": "string",
+                      "description": "供内部记录、日志等使用的消息，可以为 null\n",
+                      "nullable": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/AsyncSubmitStateResp"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "msg",
+                    "data"
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": ""
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError",
+            "description": "服务端错误"
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/v1/stu/class/{classid}/node/{nodeid}/cultural_inheritance": {
+      "get": {
+        "summary": "获取状态",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "classid",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "nodeid",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {}
+              },
+              "examples": {}
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "const": 200,
+                      "description": "HTTP 状态码为 200 时，响应中的 code 也一定为 200"
+                    },
+                    "msg": {
+                      "type": "string",
+                      "description": "供内部记录、日志等使用的消息，可以为 null\n",
+                      "nullable": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/GetClassNodeTempData"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "msg",
+                    "data"
+                  ]
+                },
+                "example": "{\r\n    \"code\": 200,\r\n    \"msg\": \"操作成功\",\r\n    \"data\": {\r\n        \"userId\": \"stu_20260403_001\",\r\n        \"classId\": \"class_culture_007\",\r\n        \"scene\": \"afterclass\",\r\n        \"progressJson\": {\r\n            \"createType\": \"poem\",\r\n            \"draft\": \"春风又绿江南岸\"\r\n        },\r\n        \"historyChatList\": [...\r\n        ],\r\n        \"historyCreateList\": [\r\n            {\r\n                \"createId\": \"create_123\",\r\n                \"createType\": \"handcopy\",\r\n                \"content\": null,\r\n                \"fileUrlList\": [\r\n                    \"https://xxx.com/handcopy.png\"\r\n                ],\r\n                \"aiComment\": \"色彩搭配很好\",\r\n                \"submitTime\": \"2026-07-28 19:00:00\"\r\n            }\r\n        ]\r\n    }\r\n}"
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": ""
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized",
+            "description": ""
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError",
+            "description": "服务端错误"
+          }
+        },
+        "security": []
+      },
+      "patch": {
+        "summary": "[课后]保存课堂页面临时进度",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "classid",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "nodeid",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "session": {
+                    "$ref": "#/components/schemas/SaveClassNodeTempData",
+                    "description": "当前会话id"
+                  }
+                },
+                "required": [
+                  "session"
+                ]
+              },
+              "example": {
+                "userId": "stu_20260403_001",
+                "classId": "class_culture_007",
+                "scene": "afterclass",
+                "progressJson": {
+                  "createType": "play",
+                  "draft": "第一幕：春日游园"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Base200Resp"
+                },
+                "example": {
+                  "code": 200,
+                  "msg": "保存成功",
+                  "data": {
+                    "success": true
+                  }
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": ""
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized",
+            "description": ""
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError",
+            "description": "服务端错误"
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/v1/stu/class/{classid}/node/{nodeid}/cultural_inheritance/submissions": {
+      "post": {
+        "summary": "[课后]提交学生创作",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "classid",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "nodeid",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "session": {
+                    "description": "AI点评生成",
+                    "$ref": "#/components/schemas/SaveStudentCreate%EF%BC%88%E6%8F%90%E4%BA%A4%E5%88%9B%E4%BD%9C%E8%AF%B7%E6%B1%82%EF%BC%89"
+                  }
+                },
+                "required": [
+                  "session"
+                ]
+              },
+              "example": {
+                "userId": "stu_20260403_001",
+                "classId": "class_culture_007",
+                "createType": "poem",
+                "content": "青山含黛水含烟，一曲清歌渡画船",
+                "fileIdList": []
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "const": 200,
+                      "description": "HTTP 状态码为 200 时，响应中的 code 也一定为 200"
+                    },
+                    "msg": {
+                      "type": "string",
+                      "description": "供内部记录、日志等使用的消息，可以为 null\n",
+                      "nullable": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/GetStudentCreate%EF%BC%88%E6%8F%90%E4%BA%A4%E5%88%9B%E4%BD%9C%E5%93%8D%E5%BA%94%EF%BC%89"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "msg",
+                    "data"
+                  ]
+                },
+                "example": {
+                  "code": 200,
+                  "msg": "提交成功",
+                  "data": {
+                    "createId": "create_456",
+                    "aiComment": "诗作格律工整，古风韵味十足",
+                    "submitTime": "2026-07-28 20:35:00"
+                  }
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": ""
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized",
+            "description": ""
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError",
+            "description": "服务端错误"
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/v1/stu/class/{classid}/node/{nodeid}/communicate": {
+      "get": {
+        "summary": "[课中]获取状态",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "classid",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "nodeid",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "const": 200,
+                      "description": "HTTP 状态码为 200 时，响应中的 code 也一定为 200"
+                    },
+                    "msg": {
+                      "type": "string",
+                      "description": "供内部记录、日志等使用的消息，可以为 null\n",
+                      "nullable": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/GetClassNodeTempData"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "msg",
+                    "data"
+                  ]
+                },
+                "example": {
+                  "code": 200,
+                  "msg": "操作成功",
+                  "data": {
+                    "userId": "stu_20260403_001",
+                    "classId": "class_culture_007",
+                    "scene": "inclass",
+                    "progressJson": {
+                      "coreWord": "团圆"
+                    },
+                    "attemptCount": 2,
+                    "historyChatList": [],
+                    "historyCreateList": [
+                      {
+                        "createId": "create_111",
+                        "createType": "essay",
+                        "status": "rejected",
+                        "content": "饺子很好吃，代表团圆。",
+                        "fileUrlList": [],
+                        "aiComment": "内容太简短，缺少细节描写哦。",
+                        "aiRevisedContent": null,
+                        "audioUrl": "https://xxx.com/audio/reject_111.mp3",
+                        "submitTime": "2026-07-29 10:20:00"
+                      },
+                      {
+                        "createId": "create_222",
+                        "createType": "essay",
+                        "status": "optimized",
+                        "content": "饺子很好吃，代表团圆。",
+                        "fileUrlList": [],
+                        "aiComment": "三次未通过，AI帮你完善了一个版本，可以参考哦！",
+                        "aiRevisedContent": "圆圆的饺子热气腾腾，像极了家人围坐时的笑脸，一口咬下去，满是团圆的味道。",
+                        "audioUrl": "https://xxx.com/audio/optimized_222.mp3",
+                        "submitTime": "2026-07-29 10:30:00"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": ""
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized",
+            "description": ""
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError",
+            "description": "服务端错误"
+          }
+        },
+        "security": []
+      },
+      "patch": {
+        "summary": "[课中]自动保存回答",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "classid",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "nodeid",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "session": {
+                    "$ref": "#/components/schemas/SaveClassNodeTempData"
+                  }
+                },
+                "required": [
+                  "session"
+                ]
+              },
+              "example": {
+                "userId": "stu_20260403_001",
+                "classId": "class_culture_007",
+                "scene": "inclass",
+                "progressJson": {
+                  "createType": "play",
+                  "draft": "第一幕：春日游园"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Base200Resp"
+                },
+                "example": {
+                  "code": 200,
+                  "msg": "保存成功",
+                  "data": {
+                    "success": true
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": ""
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized",
+            "description": ""
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError",
+            "description": "服务端错误"
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/v1/stu/class/{classid}/node/{nodeid}/communicate/submissions": {
+      "post": {
+        "summary": "[课中]提交回答",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "classid",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "nodeid",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "session": {
+                    "$ref": "#/components/schemas/SaveStudentCreate%EF%BC%88%E6%8F%90%E4%BA%A4%E5%88%9B%E4%BD%9C%E8%AF%B7%E6%B1%82%EF%BC%89"
+                  }
+                },
+                "required": [
+                  "session"
+                ]
+              },
+              "example": {
+                "userId": "stu_20260403_001",
+                "classId": "class_culture_007",
+                "createType": "essay",
+                "content": "饺子很好吃，代表团圆。",
+                "fileIdList": []
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "const": 200,
+                      "description": "HTTP 状态码为 200 时，响应中的 code 也一定为 200"
+                    },
+                    "msg": {
+                      "type": "string",
+                      "description": "供内部记录、日志等使用的消息，可以为 null\n",
+                      "nullable": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/GetStudentCreate%EF%BC%88%E6%8F%90%E4%BA%A4%E5%88%9B%E4%BD%9C%E5%93%8D%E5%BA%94%EF%BC%89"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "msg",
+                    "data"
+                  ]
+                },
+                "example": {
+                  "code": 200,
+                  "msg": "提交成功",
+                  "data": {
+                    "createId": "create_111",
+                    "aiComment": "内容太简短，缺少细节描写哦。试试加入颜色、气味或你的感受吧！",
+                    "audioUrl": "https://xxx.com/audio/reject_111.mp3",
+                    "submitTime": "2026-07-29 10:20:00"
+                  }
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": ""
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized",
+            "description": ""
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError",
+            "description": "服务端错误"
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/v1/stu/class/{classId}/node/{nodeId}/creation-workshop": {
+      "get": {
+        "summary": "获取课程视频",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "classId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "nodeId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {}
+              },
+              "examples": {}
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "const": 200,
+                      "description": "HTTP 状态码为 200 时，响应中的 code 也一定为 200"
+                    },
+                    "msg": {
+                      "type": "string",
+                      "description": "供内部记录、日志等使用的消息，可以为 null\n",
+                      "nullable": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/videoUpload"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "msg",
+                    "data"
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": ""
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError",
+            "description": "服务端错误"
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/v1/stu/class/{classId}/node/{nodeId}/creation-workshop/task/creationSubmit": {
+      "post": {
+        "summary": "创作与分享的提交",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "classId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "nodeId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreationSubmit"
+              },
+              "example": "{\r\n \r\n  \"taskStyle\": 手抄报、诗歌、剧本、分享、讲解,\r\n  \"sceneDesc\": \"手抄报画面描述\",\r\n  \"textContent\": \"内容文字\",\r\n  \r\n}"
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "const": 200,
+                      "description": "HTTP 状态码为 200 时，响应中的 code 也一定为 200"
+                    },
+                    "msg": {
+                      "type": "string",
+                      "description": "供内部记录、日志等使用的消息，可以为 null\n",
+                      "nullable": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/CreationSubmit"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "msg",
+                    "data"
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": ""
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError",
+            "description": "服务端错误"
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/v1/stu/class/{classId}/node/{nodeId}/creation-workshop/task/result": {
+      "get": {
+        "summary": "返回AI生成结果",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "classId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "nodeId",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "isProcessing": {
+                      "type": "boolean",
+                      "description": "是否还在处理中"
+                    },
+                    "Success": {
+                      "type": "boolean",
+                      "description": "是否处理成功"
+                    },
+                    "imageUrl": {
+                      "type": "string",
+                      "description": "AI生成结果返回图片链接\n"
+                    }
+                  },
+                  "required": [
+                    "isProcessing",
+                    "Success"
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": ""
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError",
+            "description": "服务端错误"
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/utils/transcriptions/{resourceId}": {
+      "get": {
+        "summary": "获取语音转写结果",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "resourceId",
+            "in": "path",
+            "description": "录音文件资源 ID",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "const": 200,
+                      "description": "HTTP 状态码为 200 时，响应中的 code 也一定为 200"
+                    },
+                    "msg": {
+                      "type": "string",
+                      "description": "供内部记录、日志等使用的消息，可以为 null\n",
+                      "nullable": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/UtilsTranscriptionsResp"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "msg",
+                    "data"
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized",
+            "description": ""
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError",
+            "description": "服务端错误"
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/utils/upload": {
+      "post": {
+        "summary": "文件上传",
+        "deprecated": false,
+        "description": "上传录音音频、拍照图片，返回文件在线访问地址",
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "format": "binary",
+                    "type": "string",
+                    "description": "单个文件",
+                    "example": ""
+                  },
+                  "media_type": {
+                    "description": "文件类型",
+                    "example": "image",
+                    "type": "string"
+                  },
+                  "resource_source": {
+                    "description": "文件来源",
+                    "example": "resouce_library",
+                    "type": "string"
+                  },
+                  "resource_info": {
+                    "description": "文件简介",
+                    "example": "",
+                    "type": "string"
+                  },
+                  "image_compress": {
+                    "type": "boolean",
+                    "description": "压缩图片",
+                    "example": "false"
+                  },
+                  "video_compress": {
+                    "type": "boolean",
+                    "description": "压缩视频",
+                    "example": "true"
+                  },
+                  "upload_oss": {
+                    "type": "boolean",
+                    "description": "是否上传",
+                    "example": "true"
+                  }
+                },
+                "required": [
+                  "file",
+                  "media_type",
+                  "resource_source"
+                ]
+              },
+              "example": {
+                "file": "",
+                "media_type": "image",
+                "resource_source": "resouce_library",
+                "resource_info": "",
+                "image_compress": "false",
+                "video_compress": "true",
+                "upload_oss": "true"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "const": 200,
+                      "description": "HTTP 状态码为 200 时，响应中的 code 也一定为 200"
+                    },
+                    "msg": {
+                      "type": "string",
+                      "description": "供内部记录、日志等使用的消息，可以为 null\n",
+                      "nullable": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/UtilsUploadResp"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "msg",
+                    "data"
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": ""
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized",
+            "description": ""
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError",
+            "description": "服务端错误"
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/utils/download/{id}": {
+      "get": {
+        "summary": "文件下载",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "文件资源id",
+            "required": true,
+            "example": "7442404666715045888",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "url_expired",
+            "in": "query",
+            "description": "URL过期",
+            "required": false,
+            "example": 30,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "const": 200,
+                      "description": "HTTP 状态码为 200 时，响应中的 code 也一定为 200"
+                    },
+                    "msg": {
+                      "type": "string",
+                      "description": "供内部记录、日志等使用的消息，可以为 null\n",
+                      "nullable": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/UtilsDownloadResp"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "msg",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": ""
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized",
+            "description": ""
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError",
+            "description": "服务端错误"
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/utils/ocr": {
+      "post": {
+        "summary": "OCR",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "resourceId": {
+                    "type": "string",
+                    "description": "图片文件资源 ID\n"
+                  }
+                },
+                "required": [
+                  "resourceId"
+                ]
+              },
+              "examples": {}
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "const": 200,
+                      "description": "HTTP 状态码为 200 时，响应中的 code 也一定为 200"
+                    },
+                    "msg": {
+                      "type": "string",
+                      "description": "供内部记录、日志等使用的消息，可以为 null\n",
+                      "nullable": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "text": {
+                          "type": "string",
+                          "description": "识别到的文字"
+                        }
+                      },
+                      "required": [
+                        "text"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "msg",
+                    "data"
+                  ]
+                }
+              }
+            },
+            "headers": {}
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": ""
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError",
+            "description": "服务端错误"
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/ai/session": {
+      "post": {
+        "summary": "创建对话Session",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSessionReq"
+              },
+              "examples": {}
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Base200Resp"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": ""
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized",
+            "description": ""
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError",
+            "description": "服务端错误"
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/ai/chat/{session}": {
+      "post": {
+        "summary": "非流式对话",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "session",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatReq"
+              },
+              "examples": {}
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer"
+                    },
+                    "msg": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ChatResp"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "msg",
+                    "data"
+                  ]
+                },
+                "example": {
+                  "messages": [
+                    {
+                      "role": "user",
+                      "content": "你好"
+                    },
+                    {
+                      "role": "assistant",
+                      "content": "嗨，小家伙！今儿个中秋月色正好，我正独自饮酒赏月呢。听说你在琢磨我那首《水调歌头》的情感象限图？这诗里可藏着我不少心思呢。你瞧，天上明月皎洁，让我想起了远方的亲人，也让我思考着人生的种种境遇。你有什么想法要跟我聊聊吗？就像当年我对月独酌时那样，咱们慢慢聊，细细品。"
+                    },
+                    {
+                      "role": "user",
+                      "content": "直接告诉我答案"
+                    }
+                  ],
+                  "prompt": ""
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": ""
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized",
+            "description": ""
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError",
+            "description": "服务端错误"
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/ai/chat/stream/{session}": {
+      "post": {
+        "summary": "流式对话",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "session",
+            "in": "path",
+            "description": "",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatReq"
+              },
+              "example": {
+                "messages": [
+                  {
+                    "role": "user",
+                    "content": "你好"
+                  },
+                  {
+                    "role": "assistant",
+                    "content": "嗨，小家伙！今儿个中秋月色正好，我正独自饮酒赏月呢。听说你在琢磨我那首《水调歌头》的情感象限图？这诗里可藏着我不少心思呢。你瞧，天上明月皎洁，让我想起了远方的亲人，也让我思考着人生的种种境遇。你有什么想法要跟我聊聊吗？就像当年我对月独酌时那样，咱们慢慢聊，细细品。"
+                  },
+                  {
+                    "role": "user",
+                    "content": "直接告诉我答案"
+                  }
+                ],
+                "prompt": ""
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StreamChatMessage"
+                },
+                "example": "{\r\n    \"id\": \"beb5f900bd57\",\r\n    \"choices\": [\r\n        {\r\n            \"delta\": {\r\n                \"content\": \"\",\r\n                \"role\": \"assistant\"\r\n            },\r\n            \"finish_reason\": null,\r\n            \"index\": 0\r\n        }\r\n    ],\r\n    \"created\": 1735113344,\r\n    \"usage\": null\r\n}\r\n{\r\n    \"id\": \"beb5f900bd57\",\r\n    \"choices\": [\r\n        {\r\n            \"delta\": {\r\n                \"content\": \"我是\",\r\n                \"role\": null\r\n            },\r\n            \"finish_reason\": null,\r\n            \"index\": 0\r\n        }\r\n    ],\r\n    \"created\": 1735113344,\r\n    \"usage\": null\r\n}\r\n{\r\n    \"id\": \"beb5f900bd57\",\r\n    \"choices\": [\r\n        {\r\n            \"delta\": {\r\n                \"content\": \"来自\",\r\n                \"role\": null\r\n            },\r\n            \"finish_reason\": null,\r\n            \"index\": 0\r\n        }\r\n    ],\r\n    \"created\": 1735113344,\r\n    \"usage\": null\r\n}\r\n{\r\n    \"id\": \"beb5f900bd57\",\r\n    \"choices\": [\r\n        {\r\n            \"delta\": {\r\n                \"content\": \"阿里\",\r\n                \"role\": null\r\n            },\r\n            \"finish_reason\": null,\r\n            \"index\": 0\r\n        }\r\n    ],\r\n    \"created\": 1735113344,\r\n    \"usage\": null\r\n}\r\n{\r\n    \"id\": \"beb5f900bd57\",\r\n    \"choices\": [\r\n        {\r\n            \"delta\": {\r\n                \"content\": \"云的超大规模\",\r\n                \"role\": null\r\n            },\r\n            \"finish_reason\": null,\r\n            \"index\": 0\r\n        }\r\n    ],\r\n    \"created\": 1735113344,\r\n    \"usage\": null\r\n}\r\n{\r\n    \"id\": \"beb5f900bd57\",\r\n    \"choices\": [\r\n        {\r\n            \"delta\": {\r\n                \"content\": \"语言模型，我\",\r\n                \"role\": null\r\n            },\r\n            \"finish_reason\": null,\r\n            \"index\": 0\r\n        }\r\n    ],\r\n    \"created\": 1735113344,\r\n    \"usage\": null\r\n}\r\n{\r\n    \"id\": \"beb5f900bd57\",\r\n    \"choices\": [\r\n        {\r\n            \"delta\": {\r\n                \"content\": \"叫通义千\",\r\n                \"role\": null\r\n            },\r\n            \"finish_reason\": null,\r\n            \"index\": 0\r\n        }\r\n    ],\r\n    \"created\": 1735113344,\r\n    \"usage\": null\r\n}\r\n{\r\n    \"id\": \"beb5f900bd57\",\r\n    \"choices\": [\r\n        {\r\n            \"delta\": {\r\n                \"content\": \"问。\",\r\n                \"role\": null\r\n            },\r\n            \"finish_reason\": null,\r\n            \"index\": 0\r\n        }\r\n    ],\r\n    \"created\": 1735113344,\r\n    \"usage\": null\r\n}\r\n{\r\n    \"id\": \"beb5f900bd57\",\r\n    \"choices\": [\r\n        {\r\n            \"delta\": {\r\n                \"content\": \"\",\r\n                \"role\": null\r\n            },\r\n            \"finish_reason\": \"stop\",\r\n            \"index\": 0\r\n        }\r\n    ],\r\n    \"created\": 1735113344,\r\n    \"usage\": null\r\n}\r\n{\r\n    \"id\": \"beb5f900bd57\",\r\n    \"choices\": [],\r\n    \"created\": 1735113344,\r\n    \"usage\": {\r\n        \"completion_tokens\": 17,\r\n        \"prompt_tokens\": 22,\r\n        \"total_tokens\": 39,\r\n        \"completion_tokens_details\": null,\r\n        \"prompt_tokens_details\": {\r\n            \"audio_tokens\": null,\r\n            \"cached_tokens\": 0\r\n        }\r\n    }\r\n}"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": ""
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized",
+            "description": ""
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError",
+            "description": "服务端错误"
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/ai/context": {
+      "get": {
+        "summary": "获取Session历史上下文",
+        "deprecated": false,
+        "description": "",
+        "tags": [],
+        "parameters": [
+          {
+            "name": "session",
+            "in": "query",
+            "description": "对话 Session",
+            "required": true,
+            "example": "sess_729cf18356ae41789e206f38d15a90c",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": {
+                      "type": "integer",
+                      "const": 200,
+                      "description": "HTTP 状态码为 200 时，响应中的 code 也一定为 200"
+                    },
+                    "msg": {
+                      "type": "string",
+                      "description": "供内部记录、日志等使用的消息，可以为 null\n",
+                      "nullable": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/GetSessionContextResp"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "msg",
+                    "data"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest",
+            "description": ""
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized",
+            "description": ""
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError",
+            "description": "服务端错误"
+          }
+        },
+        "security": []
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ZhaoZhouQiaoState": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "desc": {
+            "type": "string"
+          },
+          "video": {
+            "$ref": "#/components/schemas/Video"
+          },
+          "passages": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "content",
+                    "input",
+                    "question",
+                    "gif"
+                  ]
+                },
+                "content": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "questions": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "description": "ID 编号"
+                      },
+                      "content": {
+                        "type": "string",
+                        "description": "问题文本"
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "content"
+                    ]
+                  },
+                  "nullable": true
+                },
+                "inputs": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "title": {
+                        "type": "string"
+                      },
+                      "value": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "title",
+                      "value",
+                      "id"
+                    ]
+                  },
+                  "nullable": true
+                }
+              },
+              "required": [
+                "id",
+                "type"
+              ]
+            },
+            "description": "页面内容"
+          },
+          "gif": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              },
+              "src": {
+                "type": "string",
+                "description": "gif链接"
+              }
+            },
+            "required": [
+              "id",
+              "title",
+              "src"
+            ]
+          },
+          "completed": {
+            "type": "boolean",
+            "description": "是否完成学习\n"
+          }
+        },
+        "required": [
+          "video",
+          "title",
+          "passages",
+          "desc",
+          "completed",
+          "gif"
+        ]
+      },
+      "ZhaoZhouQiaoSumbitResp": {
+        "type": "object",
+        "properties": {
+          "submitId": {
+            "type": "string"
+          },
+          "isCorrect": {
+            "type": "boolean"
+          },
+          "tip": {
+            "type": "string"
+          },
+          "errorCount": {
+            "type": "integer"
+          },
+          "revealed": {
+            "type": "boolean",
+            "description": "是否能揭露答案"
+          },
+          "correctAnswer": {
+            "type": "string",
+            "description": "正确答案"
+          }
+        },
+        "required": [
+          "submitId",
+          "tip",
+          "errorCount",
+          "isCorrect",
+          "revealed"
+        ]
+      },
+      "WenMingZhongWaiState": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "desc": {
+            "type": "string"
+          },
+          "video": {
+            "$ref": "#/components/schemas/Video"
+          },
+          "passages": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "content",
+                    "input",
+                    "question"
+                  ]
+                },
+                "content": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "questions": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "description": "ID 编号"
+                      },
+                      "content": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "content"
+                    ]
+                  },
+                  "nullable": true
+                },
+                "inputs": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "description": "ID 编号"
+                      },
+                      "title": {
+                        "type": "string"
+                      },
+                      "value": {
+                        "type": "string",
+                        "description": "用户输入",
+                        "nullable": true
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "title"
+                    ]
+                  },
+                  "nullable": true
+                }
+              },
+              "required": [
+                "id",
+                "type"
+              ]
+            },
+            "description": "页面内容"
+          },
+          "completed": {
+            "type": "boolean",
+            "description": "是否完成学习\n"
+          }
+        },
+        "required": [
+          "video",
+          "title",
+          "passages",
+          "desc",
+          "completed"
+        ]
+      },
+      "WenMingZhongWaiSubmitResp": {
+        "type": "object",
+        "properties": {
+          "submitId": {
+            "type": "string"
+          },
+          "answer": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "questionId": {
+                  "type": "string"
+                },
+                "isCorrect": {
+                  "type": "boolean"
+                },
+                "tip": {
+                  "type": "string"
+                },
+                "errorCount": {
+                  "type": "integer"
+                },
+                "revealed": {
+                  "type": "boolean",
+                  "description": "是否能揭露答案"
+                },
+                "correctAnswer": {
+                  "type": "string",
+                  "description": "正确答案"
+                }
+              },
+              "required": [
+                "tip",
+                "errorCount",
+                "isCorrect",
+                "revealed",
+                "questionId"
+              ]
+            }
+          }
+        },
+        "required": [
+          "submitId",
+          "answer"
+        ]
+      },
+      "WriteThoughtState": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "desc": {
+            "type": "string"
+          },
+          "video": {
+            "$ref": "#/components/schemas/Video"
+          },
+          "passages": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "content",
+                    "input",
+                    "question"
+                  ]
+                },
+                "content": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "questions": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "description": "ID 编号"
+                      },
+                      "content": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "content"
+                    ]
+                  },
+                  "nullable": true
+                },
+                "inputs": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "description": "ID 编号"
+                      },
+                      "title": {
+                        "type": "string"
+                      },
+                      "value": {
+                        "type": "string",
+                        "description": "用户输入",
+                        "nullable": true
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "title"
+                    ]
+                  },
+                  "nullable": true
+                }
+              },
+              "required": [
+                "id",
+                "type"
+              ]
+            },
+            "description": "页面内容"
+          },
+          "completed": {
+            "type": "boolean",
+            "description": "是否完成学习\n"
+          }
+        },
+        "required": [
+          "video",
+          "title",
+          "passages",
+          "desc",
+          "completed"
+        ]
+      },
+      "InitialInsightState": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "标题"
+          },
+          "desc": {
+            "type": "string"
+          },
+          "video": {
+            "$ref": "#/components/schemas/Video"
+          },
+          "passages": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "questions",
+                    "content"
+                  ]
+                },
+                "content": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "questions": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "description": "ID 编号"
+                      },
+                      "content": {
+                        "type": "string",
+                        "description": "题干,如 在《赵州桥》课文中"
+                      },
+                      "template": {
+                        "type": "string",
+                        "description": "模板句,含 {{s1}}{{s2}}... 槽位"
+                      },
+                      "slots": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "key": {
+                              "type": "string",
+                              "description": "question对应的占位符"
+                            },
+                            "value": {
+                              "type": "string",
+                              "description": "input对应id"
+                            }
+                          },
+                          "required": [
+                            "key",
+                            "value"
+                          ]
+                        }
+                      },
+                      "inputs": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "value": {
+                              "type": "string",
+                              "nullable": true
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "value"
+                          ]
+                        }
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "content",
+                      "template",
+                      "inputs",
+                      "slots"
+                    ]
+                  },
+                  "nullable": true
+                }
+              },
+              "required": [
+                "id",
+                "type"
+              ]
+            },
+            "description": "页面内容"
+          },
+          "completed": {
+            "type": "boolean",
+            "description": "是否完成学习\n"
+          }
+        },
+        "required": [
+          "video",
+          "title",
+          "passages",
+          "desc",
+          "completed"
+        ]
+      },
+      "CulturalStyleState": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "desc": {
+            "type": "string"
+          },
+          "video": {
+            "$ref": "#/components/schemas/Video"
+          },
+          "questions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "type": {
+                  "type": "string",
+                  "enum": [
+                    "order",
+                    "choice"
+                  ],
+                  "description": "问题类型"
+                },
+                "title": {
+                  "type": "string",
+                  "description": "如：思考时刻"
+                },
+                "text": {
+                  "type": "string",
+                  "description": "问题文本"
+                },
+                "completed": {
+                  "type": "boolean",
+                  "description": "题目是否完成"
+                },
+                "items": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "content": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "content",
+                      "id"
+                    ]
+                  },
+                  "description": "排序题"
+                },
+                "options": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "content": {
+                        "type": "string",
+                        "description": "选项内容"
+                      }
+                    },
+                    "required": [
+                      "id",
+                      "content"
+                    ]
+                  },
+                  "description": "选择题"
+                }
+              },
+              "required": [
+                "id",
+                "title",
+                "text",
+                "type",
+                "completed"
+              ]
+            },
+            "description": "问题"
+          },
+          "completed": {
+            "type": "boolean",
+            "description": "是否完成学习\n"
+          }
+        },
+        "required": [
+          "video",
+          "title",
+          "desc",
+          "completed",
+          "questions"
+        ]
+      },
+      "StyleSubmitResp": {
+        "type": "object",
+        "properties": {
+          "Submit": {
+            "type": "string"
+          },
+          "tip": {
+            "type": "string",
+            "description": "ai返回信息"
+          },
+          "correct": {
+            "type": "boolean",
+            "description": "是否正确"
+          },
+          "errorCount": {
+            "type": "integer",
+            "description": "错误次数"
+          },
+          "correctAnswer": {
+            "type": "string",
+            "description": "正确答案"
+          },
+          "revealed": {
+            "type": "boolean",
+            "description": "是否揭露正确答案"
+          }
+        },
+        "required": [
+          "Submit",
+          "tip",
+          "correct",
+          "errorCount",
+          "revealed"
+        ]
+      },
+      "CreateSessionReq": {
+        "anyOf": [
+          {},
+          {
+            "type": "object",
+            "properties": {}
+          }
+        ]
+      },
+      "AISearchReference": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "id编号"
+          },
+          "title": {
+            "type": "string",
+            "description": "标题"
+          },
+          "link": {
+            "type": "string",
+            "format": "uri",
+            "description": "参考链接URL"
+          },
+          "snippet": {
+            "type": "string",
+            "description": "原文片段",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "link"
+        ]
+      },
+      "AIMessages": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "role": {
+              "type": "string",
+              "description": "角色"
+            },
+            "content": {
+              "type": "string",
+              "description": "消息内容"
+            },
+            "references": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/AISearchReference"
+              },
+              "description": "ai搜索中用到的参考列表",
+              "nullable": true
+            }
+          },
+          "required": [
+            "role",
+            "content"
+          ]
+        }
+      },
+      "ChatReq": {
+        "type": "object",
+        "properties": {
+          "messages": {
+            "$ref": "#/components/schemas/AIMessages",
+            "description": "历史对话组成的消息列"
+          },
+          "promot": {
+            "type": "string",
+            "description": "用户输入的一条消息，如传递该字段且没有传递 `messages`，表明该对话无需历史记录或历史记录由服务端通过 Session 管理"
+          }
+        }
+      },
+      "ChatResp": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "调用唯一标识符"
+          },
+          "choices": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "finish_reason": {
+                  "type": "string",
+                  "enum": [
+                    "stop",
+                    "length",
+                    "tool_calls"
+                  ]
+                },
+                "index": {
+                  "type": "integer",
+                  "description": "当前响应在 `choices` 数组中的序列编号"
+                },
+                "message": {
+                  "type": "object",
+                  "properties": {
+                    "role": {
+                      "type": "string",
+                      "const": "assistant",
+                      "description": "消息的角色"
+                    },
+                    "content": {
+                      "type": "string",
+                      "description": "调用模型生成的文本"
+                    }
+                  },
+                  "required": [
+                    "role",
+                    "content"
+                  ],
+                  "description": "本次调用模型输出的消息"
+                }
+              },
+              "required": [
+                "message"
+              ]
+            },
+            "description": "模型生成内容的数组，可以包含一个或多个 `choices` 对象"
+          }
+        },
+        "required": [
+          "id",
+          "choices"
+        ],
+        "description": "api"
+      },
+      "StreamChatMessage": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "choices": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "delta": {
+                  "type": "object",
+                  "properties": {
+                    "content": {
+                      "type": "string"
+                    },
+                    "role": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "content",
+                    "role"
+                  ]
+                },
+                "finish_reason": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "index": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "delta",
+                "finish_reason",
+                "index"
+              ]
+            }
+          },
+          "created": {
+            "type": "integer"
+          },
+          "usage": {
+            "type": "object",
+            "properties": {
+              "completion_tokens": {
+                "type": "integer",
+                "nullable": true
+              },
+              "prompt_tokens": {
+                "type": "integer",
+                "nullable": true
+              },
+              "total_tokens": {
+                "type": "integer",
+                "nullable": true
+              },
+              "completion_tokens_details": {
+                "type": "null"
+              },
+              "prompt_tokens_details": {
+                "type": "object",
+                "properties": {
+                  "audio_tokens": {
+                    "type": "null"
+                  },
+                  "cached_tokens": {
+                    "type": "integer",
+                    "nullable": true
+                  }
+                },
+                "nullable": true
+              }
+            },
+            "nullable": true
+          },
+          "references": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AISearchReference"
+            },
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "choices",
+          "created"
+        ]
+      },
+      "GetSessionContextResp": {
+        "type": "object",
+        "properties": {
+          "context": {
+            "$ref": "#/components/schemas/AIMessages",
+            "description": "历史上下文"
+          }
+        },
+        "required": [
+          "context"
+        ]
+      },
+      "Video": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "ID 编号"
+          },
+          "title": {
+            "type": "string",
+            "description": "视频标题"
+          },
+          "src": {
+            "type": "string",
+            "description": "视频链接"
+          },
+          "thumbnail": {
+            "type": "string",
+            "description": "略缩图链接"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "src",
+          "thumbnail"
+        ]
+      },
+      "Inputs": {
+        "type": "object",
+        "properties": {
+          "inputs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "value": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "value"
+              ]
+            }
+          }
+        },
+        "required": [
+          "inputs"
+        ]
+      },
+      "GetClassNodeTempData": {
+        "type": "object",
+        "properties": {
+          "classId": {
+            "type": "string",
+            "description": "课堂id"
+          },
+          "userId": {
+            "type": "string",
+            "description": "学生Id"
+          },
+          "scene": {
+            "type": "string",
+            "enum": [
+              "inclass",
+              "afterclass"
+            ],
+            "description": "场景枚举：inclass / afterclass"
+          },
+          "progressJson": {
+            "type": "object",
+            "properties": {
+              "historyChatList": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/GetSessionContextResp"
+                },
+                "nullable": true
+              },
+              "historyCreateList": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "历史创作记录，无创作时空数组",
+                "nullable": true
+              }
+            },
+            "description": "前端临时状态，如选中的创作类型、草稿等",
+            "required": [
+              "historyChatList",
+              "historyCreateList"
+            ],
+            "nullable": true
+          },
+          "historyCreatList": {
+            "type": "object",
+            "properties": {
+              "createId": {
+                "type": "string",
+                "description": "创作唯一ID"
+              },
+              "createType": {
+                "type": "string",
+                "description": "创作类型枚举handcopy(手抄报), poster(海报), poem(小诗), play(剧本), clinic(中医治未病中心参观), other(其他/自己喜欢的方式)",
+                "enum": [
+                  "handcopy",
+                  "poster",
+                  "poem",
+                  "play",
+                  "clinic",
+                  "other"
+                ]
+              },
+              "content": {
+                "type": "string",
+                "description": "\t纯文字内容（图片类可空）",
+                "nullable": true
+              },
+              "fileUrlList": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "图片/语音文件在线地址数组，无附件时空数组",
+                "nullable": true
+              },
+              "aiComment": {
+                "type": "string",
+                "description": "AI自动生成的点评，未生成可空",
+                "nullable": true
+              },
+              "submitTime": {
+                "type": "string",
+                "description": "提交时间"
+              },
+              "status": {
+                "type": "string",
+                "description": "审核状态枚举：pending(待审) / approved(通过) / rejected(不通过需修改) / optimized(AI已完善)",
+                "enum": [
+                  "pending",
+                  "approved",
+                  "rejected",
+                  "optimized"
+                ]
+              },
+              "aiRevisedContent": {
+                "type": "string",
+                "description": "AI基于学生历史输入，修改完善后的最终段落（对应截图中的“帮学生修改完善的一段话”）",
+                "nullable": true
+              },
+              "audioUrl": {
+                "type": "string",
+                "description": "AI生成的反馈/讲解音频地址（对应截图中的“音频讲解信息”）",
+                "nullable": true
+              }
+            },
+            "required": [
+              "createId",
+              "createType",
+              "fileUrlList",
+              "submitTime",
+              "status"
+            ]
+          },
+          "attemptCount": {
+            "type": "number",
+            "description": "当前内容已尝试提交的次数（前端用来判断是否达到3次，决定显示“修改建议”还是“AI完善版本”）"
+          }
+        },
+        "required": [
+          "classId",
+          "scene",
+          "progressJson",
+          "historyCreatList",
+          "userId",
+          "attemptCount"
+        ]
+      },
+      "SaveClassNodeTempData": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string"
+          },
+          "classId": {
+            "type": "string"
+          },
+          "scene": {
+            "type": "string"
+          },
+          "progressJson": {
+            "type": "object",
+            "properties": {},
+            "description": "前端完整临时状态"
+          }
+        },
+        "required": [
+          "classId",
+          "scene",
+          "progressJson",
+          "userId"
+        ]
+      },
+      "SaveStudentCreate（提交创作请求）": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string"
+          },
+          "classId": {
+            "type": "string"
+          },
+          "createType": {
+            "type": "string",
+            "description": "handcopy(手抄报), poster(海报), poem(小诗), play(剧本), clinic(中医治未病中心参观), other(其他/自己喜欢的方式)",
+            "enum": [
+              "handcopy",
+              "poster",
+              "poem",
+              "play",
+              "clinic",
+              "other"
+            ]
+          },
+          "content": {
+            "type": "string",
+            "description": "文字内容（若为纯文字创作必填；仅图片/语音可空）",
+            "nullable": true
+          },
+          "filedList": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "已上传文件的fileId数组，无附件时空数组"
+          }
+        },
+        "required": [
+          "classId",
+          "createType",
+          "filedList",
+          "userId"
+        ]
+      },
+      "GetStudentCreate（提交创作响应）": {
+        "type": "object",
+        "properties": {
+          "createId": {
+            "type": "string",
+            "description": "创作记录ID"
+          },
+          "aiComment": {
+            "type": "string",
+            "description": "AI点评内容，生成失败可空",
+            "nullable": true
+          },
+          "submitTime": {
+            "type": "string",
+            "description": "服务端记录时间"
+          },
+          "audioUrl": {
+            "type": "string",
+            "description": "本次反馈的讲解音频地址",
+            "nullable": true
+          }
+        },
+        "required": [
+          "createId",
+          "submitTime"
+        ]
+      },
+      "GetFileUploadResult（文件上传响应）": {
+        "type": "object",
+        "properties": {
+          "fileId": {
+            "type": "string",
+            "description": "文件唯一标识"
+          },
+          "fileUrl": {
+            "type": "string",
+            "description": "可访问的存储地址"
+          },
+          "fileType": {
+            "type": "string",
+            "enum": [
+              "image",
+              "audio"
+            ],
+            "description": "枚举：image / audio"
+          },
+          "fileName": {
+            "type": "string",
+            "description": "原始文件名"
+          }
+        },
+        "required": [
+          "fileId",
+          "fileUrl",
+          "fileType",
+          "fileName"
+        ]
+      },
+      "CreationSubmit": {
+        "type": "object",
+        "properties": {
+          "taskStyle": {
+            "type": "string",
+            "description": "创作类型"
+          },
+          "sceneDesc": {
+            "type": "string",
+            "description": "画面描述",
+            "nullable": true
+          },
+          "textContent": {
+            "type": "string",
+            "description": "文字内容"
+          }
+        },
+        "required": [
+          "taskStyle",
+          "textContent",
+          "sceneDesc"
+        ]
+      },
+      "AIResult": {
+        "type": "object",
+        "properties": {
+          "isProcessing": {
+            "type": "boolean",
+            "description": "是否还在处理中"
+          },
+          "Success": {
+            "type": "boolean",
+            "description": "是否处理成功"
+          },
+          "imageUrl": {
+            "type": "string",
+            "description": "AI生成结果返回图片链接\n"
+          }
+        },
+        "required": [
+          "isProcessing",
+          "Success"
+        ]
+      },
+      "videoUpload": {
+        "type": "object",
+        "properties": {
+          "video": {
+            "type": "string",
+            "description": "视频"
+          }
+        },
+        "required": [
+          "video"
+        ]
+      },
+      "Base200Resp": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "const": 200,
+            "description": "HTTP 状态码为 200 时，响应中的 code 也一定为 200"
+          },
+          "msg": {
+            "type": "string",
+            "description": "供内部记录、日志等使用的消息，可以为 null\n",
+            "nullable": true
+          },
+          "data": {
+            "type": "object",
+            "properties": {}
+          }
+        },
+        "required": [
+          "code",
+          "msg",
+          "data"
+        ]
+      },
+      "Base400Resp": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "code 为 4xx",
+            "minimum": 400,
+            "maximum": 499,
+            "example": 400
+          },
+          "tip": {
+            "type": "string",
+            "description": "【重要】在前端显示给用户的错误信息，必填，不可为空"
+          },
+          "msg": {
+            "type": "string",
+            "description": "供内部记录、日志等使用的消息，可以为 null",
+            "nullable": true
+          },
+          "data": {
+            "type": "object",
+            "properties": {},
+            "description": "错误响应也可以有响应数据，可以为 null",
+            "nullable": true
+          }
+        },
+        "required": [
+          "code",
+          "msg",
+          "tip",
+          "data"
+        ],
+        "description": "客户端请求错误；如错误为用户未认证，必须返回 HTTP 401"
+      },
+      "Base500Resp": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "code 为 5xx",
+            "minimum": 500,
+            "maximum": 599,
+            "example": 500
+          },
+          "tip": {
+            "type": "string",
+            "description": "【重要】在前端显示给用户的错误信息，必填，不可为空"
+          },
+          "msg": {
+            "type": "string",
+            "description": "供内部记录、日志等使用的消息，可以为 null",
+            "nullable": true
+          },
+          "data": {
+            "type": "object",
+            "properties": {},
+            "description": "错误响应也可以有响应数据，可以为 null",
+            "nullable": true
+          }
+        },
+        "required": [
+          "code",
+          "msg",
+          "tip",
+          "data"
+        ],
+        "description": "客户端请求错误；如错误为用户未认证，必须返回 HTTP 401"
+      },
+      "ClassNodeStatus": {
+        "type": "object",
+        "properties": {
+          "nodeId": {
+            "type": "integer",
+            "description": "节点id"
+          },
+          "title": {
+            "type": "string",
+            "description": "节点标题"
+          },
+          "hasChildren": {
+            "type": "boolean",
+            "description": "是否有子节点"
+          },
+          "children": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "nodeid": {
+                  "type": "integer",
+                  "description": "子节点id"
+                },
+                "title": {
+                  "type": "string",
+                  "description": "标子节点题"
+                },
+                "completed": {
+                  "type": "boolean",
+                  "description": "完成情况"
+                }
+              },
+              "required": [
+                "nodeid",
+                "title",
+                "completed"
+              ]
+            },
+            "description": "子节点"
+          }
+        },
+        "required": [
+          "nodeId",
+          "title",
+          "hasChildren",
+          "children"
+        ]
+      },
+      "Base401Resp": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "code为401"
+          },
+          "tip": {
+            "type": "string",
+            "description": "空字符串即可，http 401"
+          },
+          "msg": {
+            "type": "string",
+            "description": "内部记录，日志等使用",
+            "nullable": true
+          },
+          "data": {
+            "type": "object",
+            "properties": {},
+            "description": "错误响应也可以有响应数",
+            "nullable": true
+          }
+        },
+        "required": [
+          "code",
+          "tip",
+          "msg",
+          "data"
+        ]
+      },
+      "GetAudioTransResult": {
+        "type": "object",
+        "properties": {
+          "fileId": {
+            "type": "string",
+            "description": "对应语音文件的fileId"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "processing",
+              "finish",
+              "fail"
+            ],
+            "description": "状态枚举：processing / finish / fail"
+          },
+          "text": {
+            "type": "string",
+            "description": "转写文字，未完成或失败时为空",
+            "nullable": true
+          }
+        },
+        "required": [
+          "fileId",
+          "status"
+        ]
+      },
+      "UtilsUploadResp": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "id",
+            "description": "资源数据库自增id"
+          },
+          "resource_id": {
+            "type": "string",
+            "title": "资源id",
+            "description": "创建的唯一资源id"
+          },
+          "resource_type": {
+            "type": "string",
+            "title": "资源类型",
+            "description": "上传的资源类型"
+          },
+          "resource_suffix": {
+            "type": "string",
+            "title": "资源大小",
+            "description": "上传的资源大小"
+          },
+          "resource_size": {
+            "type": "integer",
+            "title": "资源后缀",
+            "description": "处理后的资源后缀"
+          }
+        },
+        "required": [
+          "id",
+          "resource_type",
+          "resource_suffix",
+          "resource_size"
+        ]
+      },
+      "UtilsDownloadResp": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "完整的下载链接，或以 `/` 开头的相对路径，相对路径应在前端拼接上后端 `baseUrl`"
+          }
+        },
+        "required": [
+          "url"
+        ]
+      },
+      "UtilsTranscriptionsResp": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "description": "语音转写结果文本"
+          }
+        },
+        "required": [
+          "text"
+        ]
+      },
+      "AsyncSubmitStateResp": {
+        "type": "object",
+        "properties": {
+          "isProcessing": {
+            "type": "boolean",
+            "description": "是否还在处理中"
+          },
+          "passed": {
+            "type": "boolean",
+            "description": "是否通过"
+          },
+          "comment": {
+            "type": "string",
+            "description": "通过或不通过的理由"
+          },
+          "errorCount": {
+            "type": "integer",
+            "description": "错误次数"
+          },
+          "revealed": {
+            "type": "boolean",
+            "description": "是否能揭露答案",
+            "nullable": true
+          },
+          "correctAnswer": {
+            "type": "string",
+            "description": "正确答案\n"
+          }
+        },
+        "required": [
+          "isProcessing",
+          "passed",
+          "comment",
+          "revealed"
+        ]
+      },
+      "AsyncSubmitResp": {
+        "type": "object",
+        "properties": {
+          "submitId": {
+            "type": "string",
+            "description": "提交 ID，用于查询提交结果"
+          },
+          "tip": {
+            "type": "string",
+            "description": "显示给用户的提示"
+          }
+        },
+        "required": [
+          "submitId"
+        ]
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Base400Resp"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "服务端错误",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Base500Resp"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Base401Resp"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "Authorization": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "Authorization"
+      }
+    }
+  },
+  "servers": [],
+  "security": []
+}

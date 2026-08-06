@@ -85,49 +85,47 @@
         </h3>
         <p class="guide-desc">{{ currentGuideText }}</p>
 
-        <!-- 已完成的题目块 -->
-        <div
-          v-for="(block, bIdx) in completedBlocks"
-          :key="'block-' + block.id"
-          class="completed-block"
-        >
-          <div class="block-title">{{ block.title }}</div>
-          <div class="sentence-line" v-html="renderSentence(block)"></div>
-        </div>
-
-        <!-- 当前激活答题块 -->
-        <div class="current-block" v-if="activeBlockId">
-          <div class="block-title">{{ getBlockTitle(activeBlockId) }}</div>
-          <div class="sentence-line">
-            <span v-for="(item, idx) in currentRenderSentence" :key="'cur-' + idx">
-              <span v-if="item.type === 'text'">{{ item.content }}</span>
-              <span
-                v-if="item.type === 'input'"
-                class="fill-input-wrap"
-                :class="{
-                  'input-correct': getBlankStatus(activeBlockId, item.blankIndex) === 'correct',
-                  'input-wrong': getBlankStatus(activeBlockId, item.blankIndex) === 'wrong',
-                  'input-autofilled': getBlankStatus(activeBlockId, item.blankIndex) === 'auto-filled',
-                  'input-locked': isBlankLocked(activeBlockId, item.blankIndex)
-                }"
-                @click="onBlankClick(activeBlockId, item.blankIndex)"
-              >
-                <input
-                  v-if="!isBlankLocked(activeBlockId, item.blankIndex)"
-                  ref="fillInputs"
-                  :data-blank-index="item.blankIndex"
-                  v-model="blankInputMap[activeBlockId][item.blankIndex]"
-                  class="fill-input"
-                  @keyup.enter="submitBlank(activeBlockId, item.blankIndex)"
-                  placeholder="点击输入"
-                />
-                <span v-else class="locked-text" :class="{ 'locked-correct': getBlankStatus(activeBlockId, item.blankIndex) === 'correct', 'locked-autofilled': getBlankStatus(activeBlockId, item.blankIndex) === 'auto-filled' }">
-                  {{ getBlankShowText(activeBlockId, item.blankIndex) || '点击输入' }}
+        <!-- 可见的题目块：答完一道再显示下一道 -->
+        <transition-group name="block-fade" tag="div" class="blocks-container">
+          <div
+            v-for="(block, bIdx) in visibleBlocks"
+            :key="block.id"
+            class="question-block"
+            :class="{ 'current-block': block.id === activeBlockId }"
+          >
+            <div class="block-title">{{ block.title }}</div>
+            <div class="sentence-line">
+              <span v-for="(item, idx) in getRenderSentence(block.id)" :key="bIdx + '-' + idx">
+                <span v-if="item.type === 'text'">{{ item.content }}</span>
+                <span
+                  v-if="item.type === 'input'"
+                  class="fill-input-wrap"
+                  :class="{
+                    'input-correct': getBlankStatus(block.id, item.blankIndex) === 'correct',
+                    'input-wrong': getBlankStatus(block.id, item.blankIndex) === 'wrong',
+                    'input-autofilled': getBlankStatus(block.id, item.blankIndex) === 'auto-filled',
+                    'input-locked': isBlankLocked(block.id, item.blankIndex)
+                  }"
+                  @click="onBlankClick(block.id, item.blankIndex)"
+                >
+                  <input
+                    v-if="!isBlankLocked(block.id, item.blankIndex)"
+                    ref="fillInputs"
+                    :data-blank-index="item.blankIndex"
+                    :data-block-id="block.id"
+                    v-model="blankInputMap[block.id][item.blankIndex]"
+                    class="fill-input"
+                    @keyup.enter="submitBlank(block.id, item.blankIndex)"
+                    placeholder="点击输入"
+                  />
+                  <span v-else class="locked-text" :class="{ 'locked-correct': getBlankStatus(block.id, item.blankIndex) === 'correct', 'locked-autofilled': getBlankStatus(block.id, item.blankIndex) === 'auto-filled' }">
+                    {{ getBlankShowText(block.id, item.blankIndex) || '点击输入' }}
+                  </span>
                 </span>
               </span>
-            </span>
+            </div>
           </div>
-        </div>
+        </transition-group>
       </div>
     </div>
 
@@ -304,28 +302,15 @@ const activeBlockId = computed(() => {
   return null
 })
 
-// 已经完成的块
-const completedBlocks = computed(() => {
-  return blockList.value.filter(b => blockPassedMap[b.id])
-})
-
-// 当前块的尝试次数
-const currentBlockAttempts = computed(() => {
-  if (!activeBlockId.value) return 0
-  return blockAttemptMap[activeBlockId.value]
-})
-
-// 当前块提交状态
-const currentBlockSubmitStatus = computed(() => {
-  if (!activeBlockId.value) return ''
-  const arr = blankStatusMap[activeBlockId.value]
-  if(arr.includes('wrong')) return 'wrong'
-  return ''
-})
-
-const showBlockReference = computed(() => {
-  if (!activeBlockId.value) return false
-  return showRefMap[activeBlockId.value]
+// 可见的题目块：已完成的 + 当前激活的（初始只显示第一道，答完一道后显示下一道）
+const visibleBlocks = computed(() => {
+  const blocks: BlockItem[] = []
+  for (const b of blockList.value) {
+    if (blockPassedMap[b.id] || b.id === activeBlockId.value) {
+      blocks.push(b)
+    }
+  }
+  return blocks
 })
 
 // 是否全部完成
@@ -342,10 +327,10 @@ const canSubmit = computed(() => {
   return statusArr.every(s => s === 'correct' || s === 'auto-filled')
 })
 
-// 解析句子，把【BLANKx】转为渲染节点
-const currentRenderSentence = computed(() => {
-  if (!activeBlockId.value) return []
-  const block = blockList.value.find(b => b.id === activeBlockId.value)!
+// 解析句子，把【BLANKx】转为渲染节点（通用函数）
+const getRenderSentence = (blockId: string) => {
+  const block = blockList.value.find(b => b.id === blockId)
+  if (!block) return []
   const parts: Array<{ type:'text'|'input'; content?: string; blankIndex?: number }> = []
   const regex = /【BLANK(\d+)】/g
   let lastIdx = 0
@@ -358,18 +343,6 @@ const currentRenderSentence = computed(() => {
   }
   parts.push({ type:'text', content:block.sentence.slice(lastIdx) })
   return parts
-})
-
-// ✅修复：已经完成块的html渲染，入参传完整block，读取本block的autoFilledMap，不要拿activeBlockId
-const renderSentence = (block:BlockItem) => {
-  let html = block.sentence
-  const answers = blankInputMap[block.id]
-  for(let i=0;i<answers.length;i++){
-    const isAuto = autoFilledMap[block.id]?.[i]
-    const cls = isAuto ? 'fill-autofilled' : 'fill-correct'
-    html = html.replace(`【BLANK${i}】`,`<span class="fill-static ${cls}">${answers[i]}</span>`)
-  }
-  return html
 }
 
 // ========== 工具函数 ==========
@@ -389,8 +362,12 @@ const getBlankStatus = (blockId:string, idx:number) => {
 /**
  * 实现需求：上一空没有完成，后面输入框锁定灰色不可输入
  * auto-filled 也算完成（系统自动填入后解锁下一空）
+ * 已完成的题目块的所有填空框都锁定
  */
 const isBlankLocked = (blockId:string, idx:number) => {
+  // 如果整个题目块已完成，所有填空框都锁定
+  if (blockPassedMap[blockId]) return true
+  // 否则检查前面是否有未完成的填空
   const arr = blankStatusMap[blockId]
   for(let i=0;i<idx;i++){
     if(arr[i] !== 'correct' && arr[i] !== 'auto-filled') return true
@@ -904,7 +881,7 @@ onUnmounted(()=>{
 .right-container {
   position: absolute;
   top: 170px;
-  right: 70px;
+  right: 120px;
   width: 580px;
   z-index: 10;
   background: rgba(255, 255, 255, 0.8);
@@ -940,10 +917,36 @@ onUnmounted(()=>{
   margin-bottom:14px;
 }
 
-.completed-block {
+.blocks-container {
+  position: relative;
+}
+
+.block-fade-enter-active,
+.block-fade-leave-active {
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.block-fade-enter-from {
+  opacity: 0;
+  transform: translateY(-20px);
+}
+
+.block-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-20px);
+}
+
+.block-fade-move {
+  transition: transform 0.4s ease;
+}
+
+.question-block {
   margin-bottom: 18px;
   padding-bottom:14px;
-  border-bottom:1px dashed #ddd;
+  border-bottom: none;
+}
+.question-block.current-block {
+  border-bottom: none;
 }
 .block-title {
   font-size:17px;
@@ -955,29 +958,11 @@ onUnmounted(()=>{
   font-size:16px;
   line-height:1.8;
 }
-.fill-static.fill-correct{
-  background:#2a9d3a;
-  color:#fff;
-  border:1px solid #1e7a2a;
-  padding:2px 8px;
-  border-radius:11px;
-  margin:0 4px;
-  line-height: 24px;
-}
-.fill-static.fill-autofilled{
-  background:#ffd54f;
-  color:#5d4037;
-  border:1px solid #f9a825;
-  padding:2px 8px;
-  border-radius:11px;
-  margin:0 4px;
-  line-height: 24px;
-}
 
 .fill-input-wrap {
   display: inline-block;
   vertical-align: middle;
-  margin: 0 4px;
+  margin: 10px 10px 10px 10px;
 }
 .fill-input {
  display: inline-block;
@@ -997,7 +982,7 @@ onUnmounted(()=>{
   -webkit-appearance: none;
 }
 .fill-input-wrap.input-correct .fill-input{
-  background:#2a9d3a;
+  background:#0ec126;
   border-color:#1e7a2a;
   color:#fff;
 }
@@ -1014,15 +999,15 @@ onUnmounted(()=>{
 .fill-input-wrap.input-locked .locked-text{
   display: inline-block;
   vertical-align: middle;
-  border:1px solid #ee7104;
+  border:1px solid #8d8a8a;
   border-radius:11px;
   padding:3px 8px;
-  font-size:16px;
+  font-size:15px;
   width:80px;
   height:36px;
   box-sizing: border-box;
-  background:#cfcece;
-  color:#888;
+  background:#e9e8e8;
+  color:#aca9a9;
   line-height: 28px;
   text-align:center;
   cursor: not-allowed;
@@ -1042,6 +1027,16 @@ onUnmounted(()=>{
   background:#ffd54f;
   color:#5d4037;
   border:1px solid #f9a825;
+}
+.fill-input-wrap.input-locked.input-correct .locked-text{
+  background:#2a9d3a;
+  color:#fff;
+  border-color:#1e7a2a;
+}
+.fill-input-wrap.input-locked.input-autofilled .locked-text{
+  background:#ffd54f;
+  color:#5d4037;
+  border-color:#f9a825;
 }
 
 .reference-answer {
@@ -1064,8 +1059,9 @@ onUnmounted(()=>{
 
 /* 提交按钮 */
 .submit-lesson-btn {
+  margin: 10px 0;
   position: absolute;
-  right: 70px;
+  right: 120px;
   width: 580px;
   display: flex;
   align-items: center;

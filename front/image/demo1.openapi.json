@@ -1,0 +1,2048 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "文化探究语文课堂模块API",
+    "description": "包含登录、课堂节点、写写感想、初步感悟、AI对话、文件上传、创作工坊、学生成果互评接口",
+    "version": "1.5.1"
+  },
+  "tags": [
+    { "name": "账号模块", "description": "登录、登录状态校验" },
+    { "name": "首页导航", "description": "课程首页任务进度、导航节点状态" },
+    { "name": "学生课堂节点", "description": "所有课堂交互页面" },
+    { "name": "创作工坊", "description": "手抄报、古诗、剧本、文化讲解AI生成接口" },
+    { "name": "AI对话模块", "description": "会话创建、流式/非流式对话、历史上下文" },
+    { "name": "工具通用接口", "description": "文件上传下载、语音转写、OCR识别" },
+    { "name": "成果广场", "description": "学生作品发布、互评查看" }
+  ],
+  "paths": {
+    "/api/v1/accounts:login": {
+      "post": {
+        "tags": ["账号模块"],
+        "summary": "用户登录",
+        "deprecated": false,
+        "description": "学生账号登录，返回会话凭证",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "query",
+            "description": "【废弃】用户名",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "password",
+            "in": "query",
+            "description": "【废弃】密码",
+            "required": false,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "description": "登录表单",
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "username": { "type": "string", "description": "用户名", "example": "admin" },
+                  "password": { "type": "string", "description": "密码", "example": "123456" }
+                },
+                "required": ["username", "password"]
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "登录成功",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Base200Resp" } } }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        },
+        "security": []
+      }
+    },
+    "/api/v1/accounts:status": {
+      "get": {
+        "tags": ["账号模块"],
+        "summary": "获取用户登录状态",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "会话有效",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Base200Resp" } } }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/v1/stu/home": {
+      "get": {
+        "tags": ["首页导航"],
+        "summary": "获取课程首页导航任务进度",
+        "description": "返回所有学习节点的完成状态；未完成置灰；全部完成后导航底色变更",
+        "parameters": [
+          {
+            "name": "classId",
+            "in": "query",
+            "description": "课堂ID",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": { "type": "integer", "const": 200, "description": "状态码" },
+                    "msg": { "type": "string", "nullable": true, "description": "消息" },
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/ClassNodeStatus" },
+                      "description": "节点列表"
+                    }
+                  },
+                  "required": ["code", "msg", "data"]
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/v1/stu/class/{classId}/node/{nodeId}/video-intro": {
+      "get": {
+        "tags": ["学生课堂节点"],
+        "summary": "获取节点引导视频",
+        "description": "每次进入课堂节点时播放的导入视频",
+        "parameters": [
+          {
+            "name": "classId",
+            "in": "path",
+            "description": "课堂ID",
+            "required": true,
+            "schema": { "type": "string" }
+          },
+          {
+            "name": "nodeId",
+            "in": "path",
+            "description": "节点ID",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": { "type": "integer", "const": 200, "description": "状态码" },
+                    "msg": { "type": "string", "nullable": true, "description": "消息" },
+                    "data": { "$ref": "#/components/schemas/VideoIntroData", "description": "视频数据" }
+                  },
+                  "required": ["code", "msg", "data"]
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/v1/stu/class/{classId}/node/{nodeId}/write-thoughts": {
+      "get": {
+        "tags": ["学生课堂节点"],
+        "summary": "写写感想 - 获取页面状态",
+        "description": "返回课文导航、数字人状态、当前题目与草稿、课文显示控制",
+        "parameters": [
+          { "name": "classId", "in": "path", "description": "课堂ID", "required": true, "schema": { "type": "string" } },
+          { "name": "nodeId", "in": "path", "description": "节点ID", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": { "type": "integer", "const": 200, "description": "状态码" },
+                    "msg": { "type": "string", "nullable": true, "description": "消息" },
+                    "data": { "$ref": "#/components/schemas/WriteThoughtState", "description": "页面状态数据" }
+                  },
+                  "required": ["code", "msg", "data"]
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      },
+      "patch": {
+        "tags": ["学生课堂节点"],
+        "summary": "写写感想 - 自动保存草稿",
+        "parameters": [
+          { "name": "classId", "in": "path", "description": "课堂ID", "required": true, "schema": { "type": "string" } },
+          { "name": "nodeId", "in": "path", "description": "节点ID", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "草稿数据",
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Inputs" } } }
+        },
+        "responses": {
+          "200": { "description": "保存成功", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Base200Resp" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/v1/stu/class/{classId}/node/{nodeId}/write-thoughts/{questionId}/submissions": {
+      "post": {
+        "tags": ["学生课堂节点"],
+        "summary": "写写感想 - 提交回答（异步批改）",
+        "parameters": [
+          { "name": "classId", "in": "path", "description": "课堂ID", "required": true, "schema": { "type": "string" } },
+          { "name": "nodeId", "in": "path", "description": "节点ID", "required": true, "schema": { "type": "string" } },
+          { "name": "questionId", "in": "path", "description": "题目ID", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "提交内容",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": { "type": "string", "description": "题目ID" },
+                  "input": { "type": "string", "description": "学生回答内容" }
+                },
+                "required": ["id", "input"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "已接收，返回提交ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": { "type": "integer", "const": 200, "description": "状态码" },
+                    "msg": { "type": "string", "nullable": true, "description": "消息" },
+                    "data": { "$ref": "#/components/schemas/AsyncSubmitResp", "description": "提交结果" }
+                  },
+                  "required": ["code", "msg", "data"]
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/v1/stu/class/{classId}/node/{nodeId}/write-thoughts/{questionId}/submissions/{submitId}": {
+      "get": {
+        "tags": ["学生课堂节点"],
+        "summary": "写写感想 - 查询批改结果",
+        "description": "返回批改是否通过、数字人播报、课文显隐指令、下一题解锁、错误次数达上限时返回参考答案，全部通过返回总结",
+        "parameters": [
+          { "name": "classId", "in": "path", "description": "课堂ID", "required": true, "schema": { "type": "string" } },
+          { "name": "nodeId", "in": "path", "description": "节点ID", "required": true, "schema": { "type": "string" } },
+          { "name": "questionId", "in": "path", "description": "题目ID", "required": true, "schema": { "type": "string" } },
+          { "name": "submitId", "in": "path", "description": "提交ID", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "批改结果",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": { "type": "integer", "const": 200, "description": "状态码" },
+                    "msg": { "type": "string", "nullable": true, "description": "消息" },
+                    "data": { "$ref": "#/components/schemas/WriteThoughtSubmitResult", "description": "批改结果数据" }
+                  },
+                  "required": ["code", "msg", "data"]
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/v1/stu/class/{classId}/node/{nodeId}/initial-insight": {
+      "get": {
+        "tags": ["学生课堂节点"],
+        "summary": "初步感悟 - 获取页面状态",
+        "description": "填空题页面，返回填空槽位状态（locked/active/correct/wrong/autoFilled）、数字人、课文控制",
+        "parameters": [
+          { "name": "classId", "in": "path", "description": "课堂ID", "required": true, "schema": { "type": "string" } },
+          { "name": "nodeId", "in": "path", "description": "节点ID", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": { "type": "integer", "const": 200, "description": "状态码" },
+                    "msg": { "type": "string", "nullable": true, "description": "消息" },
+                    "data": { "$ref": "#/components/schemas/InitialInsightState", "description": "页面状态数据" }
+                  },
+                  "required": ["code", "msg", "data"]
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      },
+      "patch": {
+        "tags": ["学生课堂节点"],
+        "summary": "初步感悟 - 自动保存填空草稿",
+        "parameters": [
+          { "name": "classId", "in": "path", "description": "课堂ID", "required": true, "schema": { "type": "string" } },
+          { "name": "nodeId", "in": "path", "description": "节点ID", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "草稿内容",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "slotId": { "type": "string", "description": "填空槽位ID" },
+                  "input": { "type": "string", "description": "用户输入值" }
+                },
+                "required": ["slotId", "input"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "保存成功", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Base200Resp" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/v1/stu/class/{classId}/node/{nodeId}/initial-insight/{questionId}/submissions": {
+      "post": {
+        "tags": ["学生课堂节点"],
+        "summary": "初步感悟 - 提交填空答案",
+        "parameters": [
+          { "name": "classId", "in": "path", "description": "课堂ID", "required": true, "schema": { "type": "string" } },
+          { "name": "nodeId", "in": "path", "description": "节点ID", "required": true, "schema": { "type": "string" } },
+          { "name": "questionId", "in": "path", "description": "题目ID", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "填空答案",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "inputs": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": { "type": "string", "description": "题目ID" },
+                        "slotId": { "type": "string", "description": "文段占位符" },
+                        "input": { "type": "string", "description": "用户输入值" }
+                      },
+                      "required": ["id", "slotId", "input"]
+                    },
+                    "description": "填空答案数组"
+                  }
+                },
+                "required": ["inputs"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "已接收",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": { "type": "integer", "const": 200, "description": "状态码" },
+                    "msg": { "type": "string", "nullable": true, "description": "消息" },
+                    "data": { "$ref": "#/components/schemas/AsyncSubmitResp", "description": "提交结果" }
+                  },
+                  "required": ["code", "msg", "data"]
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/v1/stu/class/{classId}/node/{nodeId}/initial-insight/{questionId}/submissions/{submitId}": {
+      "get": {
+        "tags": ["学生课堂节点"],
+        "summary": "初步感悟 - 查询填空批改结果",
+        "description": "返回当前槽位状态、数字人讲解、两次错误后自动填入答案、下一槽位解锁",
+        "parameters": [
+          { "name": "classId", "in": "path", "description": "课堂ID", "required": true, "schema": { "type": "string" } },
+          { "name": "nodeId", "in": "path", "description": "节点ID", "required": true, "schema": { "type": "string" } },
+          { "name": "questionId", "in": "path", "description": "题目ID", "required": true, "schema": { "type": "string" } },
+          { "name": "submitId", "in": "path", "description": "提交ID", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "批改结果",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": { "type": "integer", "const": 200, "description": "状态码" },
+                    "msg": { "type": "string", "nullable": true, "description": "消息" },
+                    "data": { "$ref": "#/components/schemas/InitialInsightSubmitResult", "description": "批改结果数据" }
+                  },
+                  "required": ["code", "msg", "data"]
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/v1/stu/class/{classId}/node/{nodeId}/cultural-style": {
+      "get": {
+        "tags": ["学生课堂节点"],
+        "summary": "重温文化采风 - 获取页面状态（视频交互答题）",
+        "description": "返回视频、题目列表（触发时间点）、数字人状态",
+        "parameters": [
+          { "name": "classId", "in": "path", "description": "课堂ID", "required": true, "schema": { "type": "string" } },
+          { "name": "nodeId", "in": "path", "description": "节点ID", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": { "type": "integer", "const": 200, "description": "状态码" },
+                    "msg": { "type": "string", "nullable": true, "description": "消息" },
+                    "data": { "$ref": "#/components/schemas/CulturalStyleState", "description": "页面状态数据" }
+                  },
+                  "required": ["code", "msg", "data"]
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/v1/stu/class/{classId}/node/{nodeId}/cultural-style/{questionId}/submissions": {
+      "post": {
+        "tags": ["学生课堂节点"],
+        "summary": "重温文化采风 - 提交答案",
+        "parameters": [
+          { "name": "classId", "in": "path", "description": "课堂ID", "required": true, "schema": { "type": "string" } },
+          { "name": "nodeId", "in": "path", "description": "节点ID", "required": true, "schema": { "type": "string" } },
+          { "name": "questionId", "in": "path", "description": "题目ID", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "学生答案",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": { "type": "string", "description": "题目ID" },
+                  "type": { "type": "string", "enum": ["choice", "order", "drag"], "description": "题目类型" },
+                  "input": {
+                    "description": "学生回答，选择题为字符串，排序/拖拽题为字符串数组",
+                    "anyOf": [
+                      { "type": "string" },
+                      { "type": "array", "items": { "type": "string" } }
+                    ]
+                  }
+                },
+                "required": ["id", "type", "input"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "已接收",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": { "type": "integer", "const": 200, "description": "状态码" },
+                    "msg": { "type": "string", "nullable": true, "description": "消息" },
+                    "data": { "$ref": "#/components/schemas/AsyncSubmitResp", "description": "提交结果" }
+                  },
+                  "required": ["code", "msg", "data"]
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/v1/stu/class/{classId}/node/{nodeId}/cultural-style/{questionId}/submissions/{submitId}": {
+      "get": {
+        "tags": ["学生课堂节点"],
+        "summary": "重温文化采风 - 查询答题结果",
+        "parameters": [
+          { "name": "classId", "in": "path", "description": "课堂ID", "required": true, "schema": { "type": "string" } },
+          { "name": "nodeId", "in": "path", "description": "节点ID", "required": true, "schema": { "type": "string" } },
+          { "name": "questionId", "in": "path", "description": "题目ID", "required": true, "schema": { "type": "string" } },
+          { "name": "submitId", "in": "path", "description": "提交ID", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "答题结果",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": { "type": "integer", "const": 200, "description": "状态码" },
+                    "msg": { "type": "string", "nullable": true, "description": "消息" },
+                    "data": { "$ref": "#/components/schemas/CulturalStyleSubmitResult", "description": "答题结果数据" }
+                  },
+                  "required": ["code", "msg", "data"]
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/v1/stu/class/{classId}/node/{nodeId}/zhaozhouqiao": {
+      "get": {
+        "tags": ["学生课堂节点"],
+        "summary": "学习《赵州桥》表达方法 - 获取页面状态",
+        "description": "返回课文、答题卡（语音输入）、数字人、GIF动画",
+        "parameters": [
+          { "name": "classId", "in": "path", "description": "课堂ID", "required": true, "schema": { "type": "string" } },
+          { "name": "nodeId", "in": "path", "description": "节点ID", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": { "type": "integer", "const": 200, "description": "状态码" },
+                    "msg": { "type": "string", "nullable": true, "description": "消息" },
+                    "data": { "$ref": "#/components/schemas/ZhaoZhouQiaoState", "description": "页面状态数据" }
+                  },
+                  "required": ["code", "msg", "data"]
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/v1/stu/class/{classId}/node/{nodeId}/zhaozhouqiao/{questionId}/submissions": {
+      "post": {
+        "tags": ["学生课堂节点"],
+        "summary": "赵州桥 - 提交语音回答",
+        "parameters": [
+          { "name": "classId", "in": "path", "description": "课堂ID", "required": true, "schema": { "type": "string" } },
+          { "name": "nodeId", "in": "path", "description": "节点ID", "required": true, "schema": { "type": "string" } },
+          { "name": "questionId", "in": "path", "description": "题目ID", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "语音提交内容",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": { "type": "string", "description": "题目ID" },
+                  "input": { "type": "string", "description": "语音转写文本" },
+                  "audioResourceId": { "type": "string", "description": "语音文件资源ID（可选）" }
+                },
+                "required": ["id", "input"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "已接收",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": { "type": "integer", "const": 200, "description": "状态码" },
+                    "msg": { "type": "string", "nullable": true, "description": "消息" },
+                    "data": { "$ref": "#/components/schemas/AsyncSubmitResp", "description": "提交结果" }
+                  },
+                  "required": ["code", "msg", "data"]
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/v1/stu/class/{classId}/node/{nodeId}/zhaozhouqiao/{questionId}/submissions/{submitId}": {
+      "get": {
+        "tags": ["学生课堂节点"],
+        "summary": "赵州桥 - 查询批改结果",
+        "description": "第一次错误讲解，第二次询问是否提供答案，第三次自动填入（变红），正确解锁下一卡片",
+        "parameters": [
+          { "name": "classId", "in": "path", "description": "课堂ID", "required": true, "schema": { "type": "string" } },
+          { "name": "nodeId", "in": "path", "description": "节点ID", "required": true, "schema": { "type": "string" } },
+          { "name": "questionId", "in": "path", "description": "题目ID", "required": true, "schema": { "type": "string" } },
+          { "name": "submitId", "in": "path", "description": "提交ID", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "批改结果",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": { "type": "integer", "const": 200, "description": "状态码" },
+                    "msg": { "type": "string", "nullable": true, "description": "消息" },
+                    "data": { "$ref": "#/components/schemas/ZhaoZhouQiaoSubmitResult", "description": "批改结果数据" }
+                  },
+                  "required": ["code", "msg", "data"]
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/v1/stu/class/{classId}/node/{nodeId}/wenmingzhongwai": {
+      "get": {
+        "tags": ["学生课堂节点"],
+        "summary": "学习《一幅名扬中外的画》表达方法 - 获取页面状态",
+        "description": "返回课文、数字人、多个语音输入框（错误时置灰，不显示错误答案），全部完成后展示总结视频",
+        "parameters": [
+          { "name": "classId", "in": "path", "description": "课堂ID", "required": true, "schema": { "type": "string" } },
+          { "name": "nodeId", "in": "path", "description": "节点ID", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": { "type": "integer", "const": 200, "description": "状态码" },
+                    "msg": { "type": "string", "nullable": true, "description": "消息" },
+                    "data": { "$ref": "#/components/schemas/WenMingZhongWaiState", "description": "页面状态数据" }
+                  },
+                  "required": ["code", "msg", "data"]
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/v1/stu/class/{classId}/node/{nodeId}/wenmingzhongwai/{questionId}/submissions": {
+      "post": {
+        "tags": ["学生课堂节点"],
+        "summary": "一幅名扬中外的画 - 提交语音回答",
+        "parameters": [
+          { "name": "classId", "in": "path", "description": "课堂ID", "required": true, "schema": { "type": "string" } },
+          { "name": "nodeId", "in": "path", "description": "节点ID", "required": true, "schema": { "type": "string" } },
+          { "name": "questionId", "in": "path", "description": "题目ID", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "语音提交内容",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": { "type": "string", "description": "题目ID" },
+                  "input": { "type": "string", "description": "语音转写文本" },
+                  "audioResourceId": { "type": "string", "description": "语音文件资源ID（可选）" }
+                },
+                "required": ["id", "input"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "已接收",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": { "type": "integer", "const": 200, "description": "状态码" },
+                    "msg": { "type": "string", "nullable": true, "description": "消息" },
+                    "data": { "$ref": "#/components/schemas/AsyncSubmitResp", "description": "提交结果" }
+                  },
+                  "required": ["code", "msg", "data"]
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/v1/stu/class/{classId}/node/{nodeId}/wenmingzhongwai/{questionId}/submissions/{submitId}": {
+      "get": {
+        "tags": ["学生课堂节点"],
+        "summary": "一幅名扬中外的画 - 查询批改结果",
+        "parameters": [
+          { "name": "classId", "in": "path", "description": "课堂ID", "required": true, "schema": { "type": "string" } },
+          { "name": "nodeId", "in": "path", "description": "节点ID", "required": true, "schema": { "type": "string" } },
+          { "name": "questionId", "in": "path", "description": "题目ID", "required": true, "schema": { "type": "string" } },
+          { "name": "submitId", "in": "path", "description": "提交ID", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "批改结果",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": { "type": "integer", "const": 200, "description": "状态码" },
+                    "msg": { "type": "string", "nullable": true, "description": "消息" },
+                    "data": { "$ref": "#/components/schemas/WenMingZhongWaiSubmitResult", "description": "批改结果数据" }
+                  },
+                  "required": ["code", "msg", "data"]
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/v1/stu/class/{classId}/node/{nodeId}/communicate": {
+      "get": {
+        "tags": ["学生课堂节点"],
+        "summary": "[课中交流]获取页面状态与历史创作",
+        "parameters": [
+          { "name": "classId", "in": "path", "description": "课堂ID", "required": true, "schema": { "type": "string" } },
+          { "name": "nodeId", "in": "path", "description": "节点ID", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": { "type": "integer", "const": 200, "description": "状态码" },
+                    "msg": { "type": "string", "nullable": true, "description": "消息" },
+                    "data": { "$ref": "#/components/schemas/GetClassNodeTempData", "description": "页面状态与历史数据" }
+                  },
+                  "required": ["code", "msg", "data"]
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      },
+      "patch": {
+        "tags": ["学生课堂节点"],
+        "summary": "[课中交流]自动保存草稿",
+        "parameters": [
+          { "name": "classId", "in": "path", "description": "课堂ID", "required": true, "schema": { "type": "string" } },
+          { "name": "nodeId", "in": "path", "description": "节点ID", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "临时进度数据",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "session": { "$ref": "#/components/schemas/SaveClassNodeTempData", "description": "当前会话进度" }
+                },
+                "required": ["session"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "保存成功", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Base200Resp" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/v1/stu/class/{classId}/node/{nodeId}/communicate/submissions": {
+      "post": {
+        "tags": ["学生课堂节点"],
+        "summary": "[课中交流]提交创作，AI生成点评",
+        "parameters": [
+          { "name": "classId", "in": "path", "description": "课堂ID", "required": true, "schema": { "type": "string" } },
+          { "name": "nodeId", "in": "path", "description": "节点ID", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "创作内容",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "session": { "$ref": "#/components/schemas/SaveStudentCreateRequest", "description": "创作提交请求" }
+                },
+                "required": ["session"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "提交成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": { "type": "integer", "const": 200, "description": "状态码" },
+                    "msg": { "type": "string", "nullable": true, "description": "消息" },
+                    "data": { "$ref": "#/components/schemas/GetStudentCreateResponse", "description": "AI点评结果" }
+                  },
+                  "required": ["code", "msg", "data"]
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/v1/stu/class/{classId}/node/{nodeId}/cultural_inheritance": {
+      "get": {
+        "tags": ["学生课堂节点"],
+        "summary": "[课后传承]获取课后创作页面状态",
+        "parameters": [
+          { "name": "classId", "in": "path", "description": "课堂ID", "required": true, "schema": { "type": "string" } },
+          { "name": "nodeId", "in": "path", "description": "节点ID", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": { "type": "integer", "const": 200, "description": "状态码" },
+                    "msg": { "type": "string", "nullable": true, "description": "消息" },
+                    "data": { "$ref": "#/components/schemas/GetClassNodeTempData", "description": "页面状态与历史数据" }
+                  },
+                  "required": ["code", "msg", "data"]
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      },
+      "patch": {
+        "tags": ["学生课堂节点"],
+        "summary": "[课后传承]保存临时创作草稿",
+        "parameters": [
+          { "name": "classId", "in": "path", "description": "课堂ID", "required": true, "schema": { "type": "string" } },
+          { "name": "nodeId", "in": "path", "description": "节点ID", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "临时进度数据",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "session": { "$ref": "#/components/schemas/SaveClassNodeTempData", "description": "当前会话进度" }
+                },
+                "required": ["session"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "保存成功", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Base200Resp" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/v1/stu/class/{classId}/node/{nodeId}/cultural_inheritance/submissions": {
+      "post": {
+        "tags": ["学生课堂节点"],
+        "summary": "[课后传承]提交创作作品",
+        "parameters": [
+          { "name": "classId", "in": "path", "description": "课堂ID", "required": true, "schema": { "type": "string" } },
+          { "name": "nodeId", "in": "path", "description": "节点ID", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "创作内容",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "session": { "$ref": "#/components/schemas/SaveStudentCreateRequest", "description": "创作提交请求" }
+                },
+                "required": ["session"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "提交成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": { "type": "integer", "const": 200, "description": "状态码" },
+                    "msg": { "type": "string", "nullable": true, "description": "消息" },
+                    "data": { "$ref": "#/components/schemas/GetStudentCreateResponse", "description": "AI点评结果" }
+                  },
+                  "required": ["code", "msg", "data"]
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/v1/stu/class/{classId}/node/{nodeId}/creation-workshop": {
+      "get": {
+        "tags": ["创作工坊"],
+        "summary": "创作工坊首页信息",
+        "parameters": [
+          { "name": "classId", "in": "path", "description": "课堂ID", "required": true, "schema": { "type": "string" } },
+          { "name": "nodeId", "in": "path", "description": "节点ID", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": { "type": "integer", "const": 200, "description": "状态码" },
+                    "msg": { "type": "string", "nullable": true, "description": "消息" },
+                    "data": { "$ref": "#/components/schemas/VideoUpload", "description": "视频数据" }
+                  },
+                  "required": ["code", "msg", "data"]
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/v1/stu/class/{classId}/node/{nodeId}/creation-workshop/task/creationSubmit": {
+      "post": {
+        "tags": ["创作工坊"],
+        "summary": "创作与分享提交（通用）",
+        "parameters": [
+          { "name": "classId", "in": "path", "description": "课堂ID", "required": true, "schema": { "type": "string" } },
+          { "name": "nodeId", "in": "path", "description": "节点ID", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "description": "创作内容",
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreationSubmit", "description": "创作提交" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "已接收",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": { "type": "integer", "const": 200, "description": "状态码" },
+                    "msg": { "type": "string", "nullable": true, "description": "消息" },
+                    "data": { "$ref": "#/components/schemas/CreationSubmit", "description": "生成任务信息" }
+                  },
+                  "required": ["code", "msg", "data"]
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/v1/stu/class/{classId}/node/{nodeId}/creation-workshop/task/result": {
+      "get": {
+        "tags": ["创作工坊"],
+        "summary": "查询AI生成结果",
+        "parameters": [
+          { "name": "classId", "in": "path", "description": "课堂ID", "required": true, "schema": { "type": "string" } },
+          { "name": "nodeId", "in": "path", "description": "节点ID", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "生成结果",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "isProcessing": { "type": "boolean", "description": "是否还在处理中" },
+                    "Success": { "type": "boolean", "description": "是否处理成功" },
+                    "imageUrl": { "type": "string", "description": "AI生成的图片链接" }
+                  },
+                  "required": ["isProcessing", "Success"]
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/stu/work/publish": {
+      "post": {
+        "tags": ["成果广场"],
+        "summary": "发布学生创作作品到互评广场",
+        "requestBody": {
+          "required": true,
+          "description": "发布内容",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "classId": { "type": "string", "description": "课堂ID" },
+                  "createId": { "type": "string", "description": "创作ID" },
+                  "content": { "type": "string", "description": "附加文字" }
+                },
+                "required": ["classId", "createId"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "发布成功", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Base200Resp" } } } }
+        }
+      }
+    },
+    "/api/stu/work/list": {
+      "get": {
+        "tags": ["成果广场"],
+        "summary": "获取班级所有学生发布作品",
+        "parameters": [
+          { "name": "classId", "in": "query", "description": "课堂ID", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "作品列表",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": { "type": "integer", "const": 200, "description": "状态码" },
+                    "msg": { "type": "string", "nullable": true, "description": "消息" },
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/WorkSummary", "description": "作品摘要列表" }
+                    }
+                  },
+                  "required": ["code", "msg", "data"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/stu/work/{workId}/detail": {
+      "get": {
+        "tags": ["成果广场"],
+        "summary": "查看作品详情（含所有评论）",
+        "parameters": [
+          { "name": "workId", "in": "path", "description": "作品ID", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "作品详情",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": { "type": "integer", "const": 200, "description": "状态码" },
+                    "msg": { "type": "string", "nullable": true, "description": "消息" },
+                    "data": { "$ref": "#/components/schemas/WorkDetail", "description": "作品完整信息" }
+                  },
+                  "required": ["code", "msg", "data"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/stu/work/comment": {
+      "post": {
+        "tags": ["成果广场"],
+        "summary": "给同学作品点评",
+        "requestBody": {
+          "required": true,
+          "description": "评论内容",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "workId": { "type": "string", "description": "作品ID" },
+                  "commentText": { "type": "string", "description": "评论文字" }
+                },
+                "required": ["workId", "commentText"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "评论成功", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Base200Resp" } } } }
+        }
+      }
+    },
+    "/api/utils/transcriptions/{resourceId}": {
+      "get": {
+        "tags": ["工具通用接口"],
+        "summary": "获取语音转写结果",
+        "parameters": [
+          { "name": "resourceId", "in": "path", "description": "录音文件资源 ID", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "转写结果",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": { "type": "integer", "const": 200, "description": "状态码" },
+                    "msg": { "type": "string", "nullable": true, "description": "消息" },
+                    "data": { "$ref": "#/components/schemas/UtilsTranscriptionsResp", "description": "转写文本" }
+                  },
+                  "required": ["code", "msg", "data"]
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/utils/upload": {
+      "post": {
+        "tags": ["工具通用接口"],
+        "summary": "文件上传（音频、图片）",
+        "requestBody": {
+          "required": true,
+          "description": "上传文件",
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": { "type": "string", "format": "binary", "description": "文件" },
+                  "media_type": { "type": "string", "description": "文件类型（image/audio）" },
+                  "resource_source": { "type": "string", "description": "文件来源标识" },
+                  "resource_info": { "type": "string", "description": "文件简介" },
+                  "image_compress": { "type": "boolean", "description": "是否压缩图片" },
+                  "video_compress": { "type": "boolean", "description": "是否压缩视频" },
+                  "upload_oss": { "type": "boolean", "description": "是否上传到OSS" }
+                },
+                "required": ["file", "media_type", "resource_source"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "上传成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": { "type": "integer", "const": 200, "description": "状态码" },
+                    "msg": { "type": "string", "nullable": true, "description": "消息" },
+                    "data": { "$ref": "#/components/schemas/UtilsUploadResp", "description": "上传文件信息" }
+                  },
+                  "required": ["code", "msg", "data"]
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/utils/download/{id}": {
+      "get": {
+        "tags": ["工具通用接口"],
+        "summary": "文件下载，获取临时URL",
+        "parameters": [
+          { "name": "id", "in": "path", "description": "文件资源ID", "required": true, "schema": { "type": "string" } },
+          { "name": "url_expired", "in": "query", "description": "URL过期时间（秒）", "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "临时下载地址",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": { "type": "integer", "const": 200, "description": "状态码" },
+                    "msg": { "type": "string", "nullable": true, "description": "消息" },
+                    "data": { "$ref": "#/components/schemas/UtilsDownloadResp", "description": "下载URL" }
+                  },
+                  "required": ["code", "msg", "data"]
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/utils/ocr": {
+      "post": {
+        "tags": ["工具通用接口"],
+        "summary": "图片OCR识别",
+        "requestBody": {
+          "required": true,
+          "description": "图片资源ID",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": { "resourceId": { "type": "string", "description": "图片文件资源ID" } },
+                "required": ["resourceId"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "识别结果",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": { "type": "integer", "const": 200, "description": "状态码" },
+                    "msg": { "type": "string", "nullable": true, "description": "消息" },
+                    "data": {
+                      "type": "object",
+                      "properties": { "text": { "type": "string", "description": "识别到的文字" } },
+                      "required": ["text"]
+                    }
+                  },
+                  "required": ["code", "msg", "data"]
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/ai/session": {
+      "post": {
+        "tags": ["AI对话模块"],
+        "summary": "创建对话Session",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CreateSessionReq" } } }
+        },
+        "responses": {
+          "200": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Base200Resp" } } } },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/ai/chat/{session}": {
+      "post": {
+        "tags": ["AI对话模块"],
+        "summary": "非流式对话",
+        "parameters": [
+          { "name": "session", "in": "path", "description": "对话 Session ID", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ChatReq" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "对话回复",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": { "type": "integer", "description": "状态码" },
+                    "msg": { "type": "string", "nullable": true, "description": "消息" },
+                    "data": { "$ref": "#/components/schemas/ChatResp", "description": "回复内容" }
+                  },
+                  "required": ["code", "msg", "data"]
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/ai/chat/stream/{session}": {
+      "post": {
+        "tags": ["AI对话模块"],
+        "summary": "流式对话",
+        "parameters": [
+          { "name": "session", "in": "path", "description": "对话 Session ID", "required": true, "schema": { "type": "string" } }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ChatReq" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "流式响应（text/event-stream）",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/StreamChatMessage" } } }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    },
+    "/api/ai/context": {
+      "get": {
+        "tags": ["AI对话模块"],
+        "summary": "获取Session历史上下文",
+        "parameters": [
+          { "name": "session", "in": "query", "description": "对话 Session ID", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "历史对话",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "code": { "type": "integer", "const": 200, "description": "状态码" },
+                    "msg": { "type": "string", "nullable": true, "description": "消息" },
+                    "data": { "$ref": "#/components/schemas/GetSessionContextResp", "description": "历史消息上下文" }
+                  },
+                  "required": ["code", "msg", "data"]
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "500": { "$ref": "#/components/responses/InternalServerError" }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Base200Resp": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "integer", "const": 200, "description": "状态码，始终为200" },
+          "msg": { "type": "string", "nullable": true, "description": "消息，可为空" },
+          "data": { "type": "object", "description": "响应数据" }
+        },
+        "required": ["code", "msg", "data"]
+      },
+      "Base400Resp": {
+        "type": "object",
+        "description": "客户端错误响应",
+        "properties": {
+          "code": { "type": "integer", "minimum": 400, "maximum": 499, "description": "错误码" },
+          "msg": { "type": "string", "nullable": true, "description": "内部消息" },
+          "tip": { "type": "string", "description": "用户提示" },
+          "data": { "type": "object", "nullable": true, "description": "附加数据" }
+        },
+        "required": ["code", "msg", "tip"]
+      },
+      "Base401Resp": {
+        "type": "object",
+        "description": "认证失败响应",
+        "properties": {
+          "code": { "type": "integer", "const": 401, "description": "401 未授权" },
+          "msg": { "type": "string", "nullable": true, "description": "内部消息" },
+          "tip": { "type": "string", "description": "用户提示" },
+          "data": { "type": "object", "nullable": true, "description": "附加数据" }
+        },
+        "required": ["code", "msg", "tip"]
+      },
+      "Base500Resp": {
+        "type": "object",
+        "description": "服务端错误响应",
+        "properties": {
+          "code": { "type": "integer", "minimum": 500, "maximum": 599, "description": "错误码" },
+          "msg": { "type": "string", "nullable": true, "description": "内部消息" },
+          "tip": { "type": "string", "description": "用户提示" },
+          "data": { "type": "object", "nullable": true, "description": "附加数据" }
+        },
+        "required": ["code", "msg", "tip"]
+      },
+      "Video": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "description": "视频ID" },
+          "title": { "type": "string", "description": "视频标题" },
+          "src": { "type": "string", "description": "视频链接" },
+          "thumbnail": { "type": "string", "description": "缩略图链接" }
+        }
+      },
+      "VideoIntroData": {
+        "type": "object",
+        "properties": {
+          "videoUrl": { "type": "string", "description": "导入视频地址" },
+          "poster": { "type": "string", "description": "视频封面图" },
+          "duration": { "type": "integer", "description": "视频时长（秒）" }
+        }
+      },
+      "ClassNodeStatus": {
+        "type": "object",
+        "description": "首页导航节点状态",
+        "properties": {
+          "nodeId": { "type": "integer", "description": "节点ID" },
+          "title": { "type": "string", "description": "节点标题" },
+          "hasChildren": { "type": "boolean", "description": "是否有子节点" },
+          "children": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "nodeid": { "type": "integer", "description": "子节点ID" },
+                "title": { "type": "string", "description": "子节点标题" },
+                "completed": { "type": "boolean", "description": "是否已完成" }
+              }
+            }
+          }
+        }
+      },
+      "DigitalHumanState": {
+        "type": "object",
+        "description": "数字人状态",
+        "properties": {
+          "avatarUrl": { "type": "string", "description": "数字人头像地址" },
+          "currentMessage": { "type": "string", "description": "当前气泡文字" },
+          "audioUrl": { "type": "string", "description": "当前播报语音URL" },
+          "isSpeaking": { "type": "boolean", "description": "是否正在说话" }
+        }
+      },
+      "LessonNavItem": {
+        "type": "object",
+        "description": "课文导航按钮",
+        "properties": {
+          "lessonId": { "type": "string", "description": "课文ID" },
+          "lessonName": { "type": "string", "description": "课文名称" },
+          "status": { "type": "string", "enum": ["locked", "available", "current", "completed"], "description": "状态：locked置灰不可点，available黄色高亮可点击，current当前选中，completed已通过绿色" },
+          "content": { "type": "string", "description": "课文内容" }
+        }
+      },
+      "WriteThoughtState": {
+        "type": "object",
+        "description": "写写感想页面状态",
+        "properties": {
+          "title": { "type": "string", "description": "页面标题" },
+          "desc": { "type": "string", "description": "页面描述" },
+          "video": { "$ref": "#/components/schemas/Video", "description": "导入视频" },
+          "lessons": { "type": "array", "items": { "$ref": "#/components/schemas/LessonNavItem" }, "description": "课文导航列表" },
+          "digitalHuman": { "$ref": "#/components/schemas/DigitalHumanState", "description": "数字人状态" },
+          "currentQuestion": {
+            "type": "object",
+            "properties": {
+              "questionId": { "type": "string", "description": "题目ID" },
+              "title": { "type": "string", "description": "题目标题" },
+              "instruction": { "type": "string", "description": "题目说明" },
+              "inputDraft": { "type": "string", "description": "用户草稿" },
+              "isTextVisible": { "type": "boolean", "description": "课文是否显示" },
+              "submitCount": { "type": "integer", "description": "已提交次数" },
+              "status": { "type": "string", "enum": ["pending", "submitted", "passed", "failed"], "description": "当前题目状态" }
+            },
+            "description": "当前题目信息"
+          },
+          "nextQuestions": { "type": "array", "items": { "type": "string" }, "description": "待解锁的题目ID列表" },
+          "allCompleted": { "type": "boolean", "description": "是否全部完成" }
+        }
+      },
+      "WriteThoughtSubmitResult": {
+        "type": "object",
+        "description": "写写感想批改结果",
+        "properties": {
+          "submitId": { "type": "string", "description": "提交ID" },
+          "isPassed": { "type": "boolean", "description": "是否通过" },
+          "correction": {
+            "type": "object",
+            "properties": {
+              "text": { "type": "string", "description": "批改文字" },
+              "audioUrl": { "type": "string", "description": "批改语音URL" },
+              "referenceAnswer": { "type": "string", "description": "参考答案（第三次失败时返回）" }
+            }
+          },
+          "digitalHumanAction": { "$ref": "#/components/schemas/DigitalHumanAction", "description": "数字人动作指令" },
+          "unlockNextQuestion": { "type": "boolean", "description": "是否解锁下一题" },
+          "nextQuestionId": { "type": "string", "nullable": true, "description": "下一题ID" },
+          "finalSummary": { "type": "string", "nullable": true, "description": "最终总结（全部完成时）" },
+          "finalAudioUrl": { "type": "string", "nullable": true, "description": "最终总结语音URL" }
+        }
+      },
+      "InitialInsightState": {
+        "type": "object",
+        "description": "初步感悟页面状态",
+        "properties": {
+          "title": { "type": "string", "description": "页面标题" },
+          "desc": { "type": "string", "description": "页面描述" },
+          "video": { "$ref": "#/components/schemas/Video", "description": "导入视频" },
+          "lessons": { "type": "array", "items": { "$ref": "#/components/schemas/LessonNavItem" }, "description": "课文导航列表" },
+          "digitalHuman": { "$ref": "#/components/schemas/DigitalHumanState", "description": "数字人状态" },
+          "fillItems": { "type": "array", "items": { "$ref": "#/components/schemas/FillItem" }, "description": "填空槽位列表" },
+          "canSubmit": { "type": "boolean", "description": "提交按钮是否可点击" },
+          "allCompleted": { "type": "boolean", "description": "是否全部完成" }
+        }
+      },
+      "FillItem": {
+        "type": "object",
+        "description": "填空槽位状态",
+        "properties": {
+          "slotId": { "type": "string", "description": "槽位ID" },
+          "questionId": { "type": "string", "description": "所属题目ID" },
+          "hint": { "type": "string", "description": "填空提示" },
+          "status": { "type": "string", "enum": ["locked", "active", "correct", "wrong", "autoFilled"], "description": "状态：locked锁定量不可输入，active当前可输入，correct正确绿色，wrong错误红色，autoFilled系统自动填入" },
+          "inputDraft": { "type": "string", "nullable": true, "description": "用户草稿" },
+          "correctAnswer": { "type": "string", "nullable": true, "description": "正确答案（两次错误后自动填入）" }
+        }
+      },
+      "InitialInsightSubmitResult": {
+        "type": "object",
+        "description": "初步感悟填空批改结果",
+        "properties": {
+          "slotId": { "type": "string", "description": "当前槽位ID" },
+          "status": { "type": "string", "enum": ["correct", "incorrect", "autoFilled"], "description": "批改状态" },
+          "message": { "type": "string", "description": "批改消息" },
+          "digitalHumanAction": { "$ref": "#/components/schemas/DigitalHumanAction", "description": "数字人动作指令" },
+          "unlockNextSlot": { "type": "boolean", "description": "是否解锁下一槽位" },
+          "nextSlotId": { "type": "string", "nullable": true, "description": "下一槽位ID" },
+          "finalSummary": { "type": "string", "nullable": true, "description": "最终总结" }
+        }
+      },
+      "CulturalStyleState": {
+        "type": "object",
+        "description": "重温文化采风页面状态",
+        "properties": {
+          "title": { "type": "string", "description": "页面标题" },
+          "desc": { "type": "string", "description": "页面描述" },
+          "videoUrl": { "type": "string", "description": "视频地址" },
+          "videoDuration": { "type": "integer", "description": "视频总时长（秒）" },
+          "questions": { "type": "array", "items": { "$ref": "#/components/schemas/CulturalStyleQuestion" }, "description": "题目列表" },
+          "digitalHuman": { "$ref": "#/components/schemas/DigitalHumanState", "description": "数字人状态" },
+          "allCompleted": { "type": "boolean", "description": "是否全部完成" }
+        }
+      },
+      "CulturalStyleQuestion": {
+        "type": "object",
+        "description": "文化采风题目",
+        "properties": {
+          "questionId": { "type": "string", "description": "题目ID" },
+          "triggerTime": { "type": "integer", "description": "视频播放到该时间点触发题目（秒）" },
+          "type": { "type": "string", "enum": ["choice", "order", "drag"], "description": "题目类型" },
+          "options": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": { "type": "string", "description": "选项ID" },
+                "content": { "type": "string", "description": "选项内容" }
+              }
+            },
+            "description": "选项列表"
+          },
+          "status": { "type": "string", "enum": ["pending", "correct", "incorrect", "skipped"], "description": "当前题目状态" }
+        }
+      },
+      "CulturalStyleSubmitResult": {
+        "type": "object",
+        "description": "重温文化采风答题结果",
+        "properties": {
+          "status": { "type": "string", "description": "结果状态" },
+          "correctAnswer": { "type": "string", "description": "正确答案" },
+          "explanation": { "type": "string", "description": "答案解析" },
+          "digitalHumanAction": { "$ref": "#/components/schemas/DigitalHumanAction", "description": "数字人动作指令" },
+          "closeAfter": { "type": "integer", "description": "答题窗口自动关闭秒数" }
+        }
+      },
+      "ZhaoZhouQiaoState": {
+        "type": "object",
+        "description": "赵州桥页面状态",
+        "properties": {
+          "title": { "type": "string", "description": "页面标题" },
+          "desc": { "type": "string", "description": "页面描述" },
+          "video": { "$ref": "#/components/schemas/Video", "description": "导入视频" },
+          "lesson": {
+            "type": "object",
+            "properties": {
+              "lessonId": { "type": "string", "description": "课文ID" },
+              "content": { "type": "string", "description": "课文内容" }
+            }
+          },
+          "digitalHuman": { "$ref": "#/components/schemas/DigitalHumanState", "description": "数字人状态" },
+          "cards": { "type": "array", "items": { "$ref": "#/components/schemas/ZhaoZhouQiaoCard" }, "description": "答题卡列表（仅语音输入）" },
+          "finalAnimation": {
+            "type": "object",
+            "properties": {
+              "url": { "type": "string", "description": "GIF或视频URL" },
+              "isGif": { "type": "boolean", "description": "是否为GIF" }
+            },
+            "description": "最后一题的动画"
+          },
+          "allCompleted": { "type": "boolean", "description": "是否全部完成" }
+        }
+      },
+      "ZhaoZhouQiaoCard": {
+        "type": "object",
+        "description": "赵州桥答题卡",
+        "properties": {
+          "cardId": { "type": "string", "description": "卡片ID" },
+          "question": { "type": "string", "description": "题目内容" },
+          "status": { "type": "string", "enum": ["locked", "active", "correct", "autoFilled", "wrong"], "description": "状态：locked锁定，active当前作答，correct正确绿色，autoFilled系统代填红色，wrong错误" },
+          "inputDraft": { "type": "string", "description": "语音输入草稿" },
+          "submitCount": { "type": "integer", "description": "提交次数" },
+          "answerSource": { "type": "string", "enum": ["student", "system"], "description": "答案来源：student学生答对，system系统帮助填写" },
+          "collapsed": { "type": "boolean", "description": "已完成超过两行是否折叠" }
+        }
+      },
+      "ZhaoZhouQiaoSubmitResult": {
+        "type": "object",
+        "description": "赵州桥批改结果",
+        "properties": {
+          "cardId": { "type": "string", "description": "卡片ID" },
+          "status": { "type": "string", "description": "批改状态" },
+          "correctionText": { "type": "string", "description": "批改文字" },
+          "digitalHumanAction": { "$ref": "#/components/schemas/DigitalHumanAction", "description": "数字人动作指令" },
+          "autoAnswer": { "type": "string", "nullable": true, "description": "系统自动填入的答案" },
+          "askForHint": { "type": "boolean", "description": "是否弹出询问提供答案的选项" },
+          "unlockNextCard": { "type": "boolean", "description": "是否解锁下一张答题卡" },
+          "finalReview": { "type": "string", "nullable": true, "description": "全部完成后的LLM点评" }
+        }
+      },
+      "WenMingZhongWaiState": {
+        "type": "object",
+        "description": "一幅名扬中外的画页面状态",
+        "properties": {
+          "title": { "type": "string", "description": "页面标题" },
+          "desc": { "type": "string", "description": "页面描述" },
+          "video": { "$ref": "#/components/schemas/Video", "description": "导入视频" },
+          "lesson": {
+            "type": "object",
+            "properties": {
+              "lessonId": { "type": "string", "description": "课文ID" },
+              "content": { "type": "string", "description": "课文内容" }
+            }
+          },
+          "digitalHuman": { "$ref": "#/components/schemas/DigitalHumanState", "description": "数字人状态" },
+          "inputs": { "type": "array", "items": { "$ref": "#/components/schemas/WenMingZhongWaiInput" }, "description": "语音输入框列表" },
+          "canSubmit": { "type": "boolean", "description": "提交按钮是否可点击" },
+          "summaryVideo": {
+            "type": "object",
+            "properties": {
+              "videoUrl": { "type": "string", "description": "总结视频地址" },
+              "poster": { "type": "string", "description": "视频封面" }
+            },
+            "description": "知识总结小视频"
+          },
+          "finalActions": {
+            "type": "array",
+            "items": { "type": "string", "enum": ["rewatch", "viewReport", "goHome"] },
+            "description": "视频定格后的操作按钮"
+          }
+        }
+      },
+      "WenMingZhongWaiInput": {
+        "type": "object",
+        "description": "一幅名扬中外的画语音输入框状态",
+        "properties": {
+          "inputId": { "type": "string", "description": "输入框ID" },
+          "prompt": { "type": "string", "description": "输入提示" },
+          "status": { "type": "string", "enum": ["empty", "active", "error", "correct"], "description": "状态：empty空，active正常可输入，error有错误标记，correct正确" },
+          "errorHint": { "type": "string", "nullable": true, "description": "错误时的说明文字" },
+          "draft": { "type": "string", "nullable": true, "description": "语音输入草稿" }
+        }
+      },
+      "WenMingZhongWaiSubmitResult": {
+        "type": "object",
+        "description": "一幅名扬中外的画批改结果",
+        "properties": {
+          "inputId": { "type": "string", "description": "输入框ID" },
+          "status": { "type": "string", "description": "批改状态" },
+          "errorHint": { "type": "string", "description": "错误说明" },
+          "digitalHumanAction": { "$ref": "#/components/schemas/DigitalHumanAction", "description": "数字人动作指令" },
+          "allCorrect": { "type": "boolean", "description": "是否全部正确" },
+          "summaryVideoUrl": { "type": "string", "description": "总结视频URL" },
+          "finalReview": { "type": "string", "description": "最终评价" }
+        }
+      },
+      "DigitalHumanAction": {
+        "type": "object",
+        "description": "数字人播报指令",
+        "properties": {
+          "speakText": { "type": "string", "description": "播报文本" },
+          "audioUrl": { "type": "string", "description": "播报语音URL" },
+          "hideLesson": { "type": "boolean", "description": "是否收起课文" },
+          "showLesson": { "type": "boolean", "description": "是否展开课文" }
+        }
+      },
+      "GetClassNodeTempData": {
+        "type": "object",
+        "description": "课中/课后页面临时数据",
+        "properties": {
+          "classId": { "type": "string", "description": "课堂ID" },
+          "userId": { "type": "string", "description": "学生ID" },
+          "scene": { "type": "string", "enum": ["inclass", "afterclass"], "description": "场景类型" },
+          "progressJson": { "type": "object", "description": "前端临时状态（草稿、进度等）" },
+          "historyChatList": { "type": "array", "items": { "type": "object" }, "description": "历史对话记录" },
+          "historyCreateList": { "type": "array", "items": { "type": "object" }, "description": "历史创作记录" },
+          "attemptCount": { "type": "integer", "description": "当前尝试次数" }
+        }
+      },
+      "SaveClassNodeTempData": {
+        "type": "object",
+        "description": "保存临时进度的请求体",
+        "properties": {
+          "userId": { "type": "string", "description": "学生ID" },
+          "classId": { "type": "string", "description": "课堂ID" },
+          "scene": { "type": "string", "description": "场景类型" },
+          "progressJson": { "type": "object", "description": "完整临时状态JSON" }
+        }
+      },
+      "SaveStudentCreateRequest": {
+        "type": "object",
+        "description": "学生创作提交请求",
+        "properties": {
+          "userId": { "type": "string", "description": "学生ID" },
+          "classId": { "type": "string", "description": "课堂ID" },
+          "createType": { "type": "string", "description": "创作类型（handcopy/poem/play等）" },
+          "content": { "type": "string", "nullable": true, "description": "文字内容" },
+          "fileIdList": { "type": "array", "items": { "type": "string" }, "description": "已上传文件的ID数组" }
+        }
+      },
+      "GetStudentCreateResponse": {
+        "type": "object",
+        "description": "创作提交响应",
+        "properties": {
+          "createId": { "type": "string", "description": "创作记录ID" },
+          "aiComment": { "type": "string", "nullable": true, "description": "AI点评" },
+          "submitTime": { "type": "string", "description": "提交时间" },
+          "audioUrl": { "type": "string", "nullable": true, "description": "AI反馈语音URL" }
+        }
+      },
+      "VideoUpload": {
+        "type": "object",
+        "description": "视频上传响应",
+        "properties": {
+          "video": { "type": "string", "description": "视频地址" }
+        }
+      },
+      "CreationSubmit": {
+        "type": "object",
+        "description": "创作工坊提交内容",
+        "properties": {
+          "taskStyle": { "type": "string", "description": "创作类型（手抄报、诗歌等）" },
+          "sceneDesc": { "type": "string", "nullable": true, "description": "画面描述" },
+          "textContent": { "type": "string", "description": "文字内容" }
+        }
+      },
+      "CreateSessionReq": { "type": "object", "description": "创建AI会话请求（预留）" },
+      "ChatReq": {
+        "type": "object",
+        "description": "AI对话请求",
+        "properties": {
+          "messages": { "$ref": "#/components/schemas/AIMessages", "description": "历史消息列表" },
+          "prompt": { "type": "string", "description": "单条用户消息（与messages二选一）" }
+        }
+      },
+      "AIMessages": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "role": { "type": "string", "description": "角色（user/assistant）" },
+            "content": { "type": "string", "description": "消息内容" }
+          }
+        }
+      },
+      "ChatResp": {
+        "type": "object",
+        "description": "非流式对话响应",
+        "properties": {
+          "id": { "type": "string", "description": "调用唯一ID" },
+          "choices": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "message": {
+                  "type": "object",
+                  "properties": {
+                    "role": { "type": "string", "description": "角色" },
+                    "content": { "type": "string", "description": "模型回复文本" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "StreamChatMessage": {
+        "type": "object",
+        "description": "流式对话响应块",
+        "properties": {
+          "id": { "type": "string", "description": "调用ID" },
+          "choices": { "type": "array", "items": { "type": "object" }, "description": "增量内容" }
+        }
+      },
+      "GetSessionContextResp": {
+        "type": "object",
+        "description": "会话历史上下文",
+        "properties": {
+          "context": { "$ref": "#/components/schemas/AIMessages", "description": "历史消息数组" }
+        }
+      },
+      "UtilsUploadResp": {
+        "type": "object",
+        "description": "文件上传响应",
+        "properties": {
+          "id": { "type": "integer", "description": "数据库自增ID" },
+          "resource_id": { "type": "string", "description": "资源唯一ID" },
+          "resource_type": { "type": "string", "description": "资源类型" },
+          "resource_suffix": { "type": "string", "description": "文件后缀" },
+          "resource_size": { "type": "integer", "description": "文件大小（字节）" }
+        }
+      },
+      "UtilsDownloadResp": {
+        "type": "object",
+        "properties": {
+          "url": { "type": "string", "description": "临时下载链接" }
+        }
+      },
+      "UtilsTranscriptionsResp": {
+        "type": "object",
+        "properties": {
+          "text": { "type": "string", "description": "语音转写文本" }
+        }
+      },
+      "AsyncSubmitResp": {
+        "type": "object",
+        "description": "异步提交的初步响应",
+        "properties": {
+          "submitId": { "type": "string", "description": "提交ID，用于查询结果" },
+          "tip": { "type": "string", "description": "用户提示" }
+        }
+      },
+      "WorkSummary": {
+        "type": "object",
+        "description": "作品摘要",
+        "properties": {
+          "workId": { "type": "string", "description": "作品ID" },
+          "studentName": { "type": "string", "description": "学生姓名" },
+          "content": { "type": "string", "description": "作品内容" },
+          "publishTime": { "type": "string", "description": "发布时间" },
+          "likeCount": { "type": "integer", "description": "点赞数" },
+          "commentCount": { "type": "integer", "description": "评论数" }
+        }
+      },
+      "WorkDetail": {
+        "type": "object",
+        "description": "作品详情",
+        "properties": {
+          "workId": { "type": "string", "description": "作品ID" },
+          "studentName": { "type": "string", "description": "学生姓名" },
+          "content": { "type": "string", "description": "作品内容" },
+          "images": { "type": "array", "items": { "type": "string" }, "description": "作品图片URL数组" },
+          "publishTime": { "type": "string", "description": "发布时间" },
+          "comments": { "type": "array", "items": { "$ref": "#/components/schemas/Comment" }, "description": "评论列表" }
+        }
+      },
+      "Comment": {
+        "type": "object",
+        "description": "评论",
+        "properties": {
+          "commentId": { "type": "string", "description": "评论ID" },
+          "studentName": { "type": "string", "description": "评论者姓名" },
+          "text": { "type": "string", "description": "评论内容" },
+          "time": { "type": "string", "description": "评论时间" }
+        }
+      },
+      "Inputs": {
+        "type": "object",
+        "description": "草稿输入数据",
+        "properties": {
+          "inputs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": { "type": "string", "description": "题目ID" },
+                "value": { "type": "string", "description": "输入值" }
+              },
+              "required": ["id", "value"]
+            }
+          }
+        },
+        "required": ["inputs"]
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "请求参数错误",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/Base400Resp" }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "认证失败",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/Base401Resp" }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "服务端错误",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/Base500Resp" }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "Authorization": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "Authorization",
+        "description": "认证令牌"
+      }
+    }
+  }
+}
