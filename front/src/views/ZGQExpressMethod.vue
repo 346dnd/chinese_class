@@ -34,32 +34,39 @@
       <img src="/image/image 116.png" alt="背景" class="bg-img" />
     </div>
 
-    <!-- 左侧数字人+对话气泡 位置不变，气泡箭头移到右侧 -->
-    <div class="human-wrap" v-if="showHuman">
+    <!-- 左侧数字人+对话气泡 【位置固定不变，完成后依旧显示】 -->
+    <div class="human-wrap" v-show="!hideHumanWhenArticleOpen">
       <img src="/image/罗罗_汉服.psd 1 .png" alt="数字人" class="human-img" />
-      <div
-        class="human-talk-bubble"
-        :class="{ expanded: isBubbleExpanded }"
-        v-if="talkText"
-      >
-        <span class="bubble-text">{{ talkText }}</span>
-        <img
-          src="/image/语音朗读.png"
-          alt="播放"
-          class="bubble-voice-icon"
-          @click="playBubbleAudio"
-        />
-        <span class="bubble-arrow"></span>
-      </div>
+      <div class="bubble-action-wrap" v-if="talkText">
+        <div
+          class="human-talk-bubble"
+          :class="{ expanded: isBubbleExpanded }"
+        >
+          <span class="bubble-text">{{ talkText }}</span>
+          <img
+            src="/image/语音朗读.png"
+            alt="播放"
+            class="bubble-voice-icon"
+            @click="playBubbleAudio"
+          />
+          <span class="bubble-arrow"></span>
+        </div>
 
-      <!-- 完成后操作按钮，和写写感想一模一样 -->
-      <div class="completion-action-bar" v-if="isAllCompleted">
-        <button class="completion-action-btn report-btn" @click="goToReport">查看评价</button>
-        <button class="completion-action-btn home-btn" @click="goHome">回到首页</button>
+        <!-- ✅按钮在气泡正下方，跟随气泡高度 -->
+        <div class="completion-action-bar" v-if="isAllCompleted">
+          <button class="completion-action-btn report-btn" @click="goToReport">
+            <img src="/image/矢量 69.png" alt="图标" class="bar-btn-icon" />
+            查看评价
+          </button>
+          <button class="completion-action-btn home-btn" @click="goHome">
+            <img src="/image/back 1.png" alt="图标" class="bar-btn-icon" />
+            回到首页
+          </button>
+        </div>
       </div>
     </div>
 
-    <!-- ==========【重点】课文弹窗，1:1照搬写写感想的article-panel结构，删掉旧article-popup ========== -->
+    <!-- ==========课文弹窗 ========== -->
     <div class="left-area">
       <div class="article-close-btn" v-if="showArticle" @click="closeArticle">×</div>
       <div class="article-panel" v-if="showArticle">
@@ -70,11 +77,14 @@
       </div>
     </div>
 
-    <!-- 右侧分步流程：移除连接线，v-if控制，答对一题渲染下一题 -->
+    <!-- 右侧分步流程 -->
     <div class="step-flow">
       <!-- 步骤1 -->
       <div class="step-item" v-if="step >= 1">
-        <div class="step-num" :class="{ active: step >= 1 }">1</div>
+        <div class="step-num" :class="{
+          active: step === 1 && status1 !== 'correct',
+          passed: status1 === 'correct'
+        }">1</div>
         <div
           class="step-card"
           :class="{
@@ -85,7 +95,6 @@
           <p class="step-question">{{ steps[0]?.question }}</p>
           <div class="input-box" v-if="step === 1">
             <div class="input-with-action">
-              <!-- 只展示文本，禁止手动输入，移除input -->
               <div class="read-input" :class="{ 'input-wrong': status1 === 'wrong' }">
                 {{ answer1 || '点击窗口输入' }}
               </div>
@@ -94,7 +103,6 @@
                 {{ recordStatus[1].recording ? `录音中(${recordStatus[1].countdown}s)` : '语音' }}
               </button>
             </div>
-            <!-- 提交按钮内置答题框内部，修复class带横杠语法，禁用/金色样式 -->
             <button
               class="submit-inner-btn"
               :class="{ 'submit-disable': !answer1.trim() }"
@@ -108,14 +116,22 @@
             </div>
           </div>
           <div class="answer-result" v-if="step >= 2">
-            <div class="green-tag">{{ steps[0]?.correctAnswer }}</div>
+            <div class="green-tag" :class="{fold: !answerExpand[1]}">
+              {{ steps[0]?.correctAnswer }}
+            </div>
+            <span v-if="isTextOverflow(steps[0]?.correctAnswer) && step >=2" class="more-btn" @click="toggleExpand(1)">
+              {{ answerExpand[1] ? '收起' : '更多' }}
+            </span>
           </div>
         </div>
       </div>
 
-      <!-- 步骤2，答对step1才渲染 -->
+      <!-- 步骤2 -->
       <div class="step-item" v-if="step >= 2">
-        <div class="step-num" :class="{ active: step >= 2 }">2</div>
+        <div class="step-num" :class="{
+          active: step === 2 && status2 !== 'correct',
+          passed: status2 === 'correct'
+        }">2</div>
         <div
           class="step-card"
           v-if="step >= 2"
@@ -148,14 +164,22 @@
             </div>
           </div>
           <div class="answer-result" v-if="step >= 3">
-            <div class="green-tag">{{ steps[1]?.correctAnswer }}</div>
+            <div class="green-tag" :class="{fold: !answerExpand[2]}">
+              {{ steps[1]?.correctAnswer }}
+            </div>
+            <span v-if="isTextOverflow(steps[1]?.correctAnswer) && step >=3" class="more-btn" @click="toggleExpand(2)">
+              {{ answerExpand[2] ? '收起' : '更多' }}
+            </span>
           </div>
         </div>
       </div>
 
-      <!-- 步骤3，答对step2才渲染 -->
+      <!-- 步骤3 -->
       <div class="step-item" v-if="step >= 3">
-        <div class="step-num" :class="{ active: step >= 3 }">3</div>
+        <div class="step-num" :class="{
+          active: step === 3 && status3 !== 'correct',
+          passed: status3 === 'correct'
+        }">3</div>
         <div
           class="step-card"
           v-if="step >= 3"
@@ -187,19 +211,81 @@
               朗读内容不完整，请{{ recordAttempt[3] >= 2 ? '自动完成关卡' : '重新朗读' }}，剩余次数：{{ 2 - recordAttempt[3] }}次
             </div>
           </div>
+          <div class="answer-result" v-if="step >= 4">
+            <div class="green-tag" :class="{fold: !answerExpand[3]}">
+              {{ answer3 }}
+            </div>
+            <span v-if="isTextOverflow(answer3) && step >=4" class="more-btn" @click="toggleExpand(3)">
+              {{ answerExpand[3] ? '收起' : '更多' }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 第4题，带视频 -->
+      <div class="step-item" v-if="step >= 4">
+        <div class="step-num" :class="{
+          active: step === 4 && status4 !== 'correct',
+          passed: status4 === 'correct'
+        }">4</div>
+        <div
+          class="step-card"
+          v-if="step >= 4"
+          :class="{
+            'card-correct': status4 === 'correct',
+            'card-wrong': status4 === 'wrong'
+          }"
+        >
+          <p class="step-question">{{ steps[3]?.question }}</p>
+          <div class="video-wrap" v-if="recordStatus[4].recording || (step === 4 && status4 !== 'correct')">
+            <video
+              ref="videoRef"
+              v-if="humanVideoUrl"
+              :src="humanVideoUrl"
+              autoplay
+              muted
+              @ended="onVideoEnd"
+              class="step-video"
+            ></video>
+          </div>
+          <div class="input-box" v-if="step === 4 && status4 !== 'correct'">
+            <div class="input-with-action">
+              <div class="read-input" :class="{ 'input-wrong': status4 === 'wrong' }">
+                {{ answer4 || '点击窗口输入' }}
+              </div>
+              <button class="mic-btn" @click="startRecord(4)">
+                <img src="/image/矢量 62.png" alt="语音" class="mic-icon" />
+                {{ recordStatus[4].recording ? `录音中(${recordStatus[4].countdown}s)` : '朗读' }}
+              </button>
+            </div>
+            <div class="error-tip" v-if="status4 === 'wrong'">
+              朗读内容不完整，请{{ recordAttempt[4] >= 2 ? '自动完成关卡' : '重新朗读' }}，剩余次数：{{ 2 - recordAttempt[4] }}次
+            </div>
+          </div>
+          <div class="answer-result" v-if="step > 4 || status4 === 'correct'">
+            <div class="green-tag" :class="{fold: !answerExpand[4]}">
+              {{ answer4 }}
+            </div>
+            <span v-if="isTextOverflow(answer4) && (step > 4 || status4 === 'correct')" class="more-btn" @click="toggleExpand(4)">
+              {{ answerExpand[4] ? '收起' : '更多' }}
+            </span>
+          </div>
         </div>
       </div>
     </div>
+
+    <!-- 完成遮罩层 -->
+    <div class="completion-overlay" v-if="isAllCompleted"></div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch, reactive } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, reactive, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
+const videoRef = ref<HTMLVideoElement | null>(null)
 
-// ========== 写写感想同款 1920*1080 自适应缩放 ==========
 const DESIGN_WIDTH = 1920
 const DESIGN_HEIGHT = 1080
 const pageStyle = ref({
@@ -219,48 +305,53 @@ const updateScale = () => {
   }
 }
 
-// 气泡折叠
 const isBubbleExpanded = ref(false)
+const hideHumanWhenArticleOpen = ref(false)
 
-// 数字人显示状态
-const showHuman = ref(true)
-
-// 课文弹窗状态
 const showArticle = ref(false)
 const articleHtml = ref(`赵州桥，又称安济桥，位于河北省石家庄市。<br>赵州桥建于隋朝年间，由著名匠师李春设计建造，距今已有1400多年的历史。<br>赵州桥的桥洞不是普通的半圆形，而是像一张弓。<br>赵州桥非常雄伟。桥长五十多米，有九米多宽。<br>赵州桥体现了劳动人民的智慧和才干，是我国宝贵的历史文化遗产。`)
 
-// 步骤数据
+const answerExpand = reactive({1:false,2:false,3:false,4:false})
+const toggleExpand = (idx:number)=>{
+  answerExpand[idx] = !answerExpand[idx]
+}
+const isTextOverflow = (text:string)=>{
+  if(!text) return false
+  return text.length > 32
+}
+
 const step = ref(1)
 const answer1 = ref('')
 const answer2 = ref('')
 const answer3 = ref('')
+const answer4 = ref('')
 
-// 朗读次数限制：每题最多2次
-const recordAttempt = reactive({ 1: 0, 2: 0, 3: 0 })
-// 录音状态
+const recordAttempt = reactive({ 1: 0, 2: 0, 3: 0,4:0 })
 const recordStatus = reactive({
   1: { recording: false, countdown: 60, timer: null as number | null },
   2: { recording: false, countdown: 60, timer: null as number | null },
-  3: { recording: false, countdown: 60, timer: null as number | null }
+  3: { recording: false, countdown: 60, timer: null as number | null },
+  4: { recording: false, countdown: 60, timer: null as number | null }
 })
 
 const steps = ref([
   { step: 1, question: '在《赵州桥》的第3自然段里，一个意思指的是：', correctAnswer: '美观' },
   { step: 2, question: '根据这一个意思写一句中心句：', correctAnswer: '这座桥不但坚固，而且美观' },
-  { step: 3, question: '围绕这中心句，后面每一句话写的内容都跟这个意思有关。可以用上修辞手法，可以用事例或细节来写具体。请你读读中心句后面的句子，体会这种写法。', correctAnswer: '' }
+  { step: 3, question: '围绕这中心句，后面每一句话写的内容都跟这个意思有关。可以用上修辞手法，可以用事例或细节来写具体。请你读读中心句后面的句子，体会这种写法。', correctAnswer: '' },
+  { step: 4, question: '请再读一次，更好的去体会赵州桥的美观。', correctAnswer: '' }
 ])
 
 const status1 = ref('')
 const status2 = ref('')
 const status3 = ref('')
+const status4 = ref('')
 
 const talkText = ref('')
+const humanVideoUrl = ref('')
 
-// 课文tab配置，完全对齐写写感想
 const tabList = ref([{ id: 'zhaozhou', name: '赵州桥' }])
 const currentTabId = ref('zhaozhou')
 
-// ========== 交互流水数据结构，对接LLM接口 ==========
 const studentRecord = reactive({
   student_name: '',
   gender: '',
@@ -273,10 +364,12 @@ const studentRecord = reactive({
   }>
 })
 
-// 计算属性
-const isAllCompleted = computed(() => status1.value === 'correct' && status2.value === 'correct' && status3.value === 'correct')
+const isAllCompleted = computed(() => status1.value === 'correct' && status2.value === 'correct' && status3.value === 'correct' && status4.value === 'correct')
 
-// tab样式方法，完全复制写写感想
+const completionMessage = computed(() => {
+  return '太棒啦！你已经完成全部学习任务，你认真朗读课文，体会到赵州桥围绕一个意思写段落的写作方法。'
+})
+
 const getTabClass = (tabId: string) => {
   const isActive = tabId === currentTabId.value
   return {
@@ -289,22 +382,19 @@ const getTabClass = (tabId: string) => {
 const handleTabClick = (tabId: string) => {
   currentTabId.value = tabId
   showArticle.value = true
-  showHuman.value = false
   talkText.value = ''
+  hideHumanWhenArticleOpen.value = true
 }
 const closeArticle = () => {
   showArticle.value = false
-  showHuman.value = true
-  // 恢复数字人说话内容
+  hideHumanWhenArticleOpen.value = false
   talkText.value = '亲爱的某某同学，我们来梳理"围绕一个意思把一段话写清楚"的表达方法吧。你可以点击课文名称打开课文哦。'
 }
 
-// 加载话术
 const loadTalkText = async () => {
   talkText.value = '亲爱的某某同学，我们来梳理"围绕一个意思把一段话写清楚"的表达方法吧。你可以点击课文名称打开课文哦。'
 }
 
-// 语音播放
 const playAudio = (text: string) => {
   console.log('播放语音：', text)
 }
@@ -313,7 +403,6 @@ const playBubbleAudio = () => {
   if (talkText.value) playAudio(talkText.value)
 }
 
-// ✅【关键】数字人说话，自动收起课文弹窗
 watch(talkText, () => {
   isBubbleExpanded.value = false
   if(talkText.value){
@@ -321,14 +410,22 @@ watch(talkText, () => {
   }
 })
 
-// ========== 录音逻辑：60s倒计时，最多2次机会 ==========
-const startRecord = (stepNum: number) => {
+const startRecord = async (stepNum: number) => {
   if (recordAttempt[stepNum] >= 2) return
   const cur = recordStatus[stepNum]
   if (cur.recording) return
   cur.recording = true
   cur.countdown = 60
-  // 朗读动画钩子，后续接入动画资源
+
+  if(stepNum ===4){
+    humanVideoUrl.value = ''
+    await nextTick()
+    if(videoRef.value){
+      videoRef.value.currentTime = 0
+      videoRef.value.play().catch(()=>{})
+    }
+  }
+
   playReadAnimate()
   cur.timer = window.setInterval(() => {
     cur.countdown -= 1
@@ -338,6 +435,12 @@ const startRecord = (stepNum: number) => {
   }, 1000)
 }
 
+const onVideoEnd = ()=>{
+  if(videoRef.value){
+    videoRef.value.pause()
+  }
+}
+
 const endRecord = (stepNum: number) => {
   const cur = recordStatus[stepNum]
   if (cur.timer) clearInterval(cur.timer)
@@ -345,28 +448,41 @@ const endRecord = (stepNum: number) => {
   cur.countdown = 60
   recordAttempt[stepNum] += 1
 
-  // todo:这里替换为真实语音识别结果
-  const mockResultList = ['美观', '这座桥不但坚固，而且美观', '桥面两侧有石栏，栏板上雕刻着精美的图案：有的刻着两条相互缠绕的龙，嘴里吐出美丽的水花']
+  const mockResultList = [
+    '美观',
+    '这座桥不但坚固，而且美观',
+    '桥面两侧有石栏，栏板上雕刻着精美的图案：有的刻着两条相互缠绕的龙，嘴里吐出美丽的水花',
+    '桥面两侧有石栏，栏板上雕刻着精美的图案：有的刻着两条相互缠绕的龙，嘴里吐出美丽的水花；有的刻着两条飞龙，前爪相互抵着，各自回首遥望；还有的刻着双龙戏珠。所有的龙似乎都在游动，真像活了一样。'
+  ]
   if (stepNum === 1) answer1.value = mockResultList[0]
   if (stepNum === 2) answer2.value = mockResultList[1]
   if (stepNum === 3) answer3.value = mockResultList[2]
+  if (stepNum === 4) answer4.value = mockResultList[3]
 
-  // 动画定格最后一帧
   pauseReadAnimate()
+
+  if(stepNum === 4 && recordAttempt[4] < 2){
+    setTimeout(()=>{
+      startRecord(4)
+    },800)
+  }
+
+  if(stepNum === 4 && recordAttempt[4] >= 2){
+    status4.value = 'correct'
+    submitRecordToLLM()
+    saveState()
+  }
 }
 
-// 朗读动画预留插槽
 const playReadAnimate = () => console.log('朗读动画开始播放')
 const pauseReadAnimate = () => console.log('朗读动画定格最后一帧')
 
-// ========== 提交校验逻辑，记录交互流水 ==========
 const submitStep1 = () => {
   const startTime = Date.now()
   const correctAnswer = steps.value[0]?.correctAnswer || ''
   const flag = answer1.value.trim() === correctAnswer
   status1.value = flag ? 'correct' : 'wrong'
 
-  // 写入交互流水
   studentRecord.records.push({
     interaction_id: 1,
     student_input: answer1.value,
@@ -376,17 +492,13 @@ const submitStep1 = () => {
   })
 
   if (flag) {
-    // ✅合格，自动下一题，不管课文弹窗状态
     step.value = 2
     talkText.value = '很棒，我们来到第2题，请你朗读对应的句子。'
   } else {
-    // ✅不合格：关闭课文，数字人播报提示
     showArticle.value = false
     const tipText = recordAttempt[1] >= 2 ? '次数用完，我们直接进入下一题。' : '这次朗读不对，请重新朗读。'
     talkText.value = tipText
     playAudio(tipText)
-
-    // 2次机会用完自动放行
     if (recordAttempt[1] >= 2) {
       status1.value = 'correct'
       step.value = 2
@@ -417,7 +529,6 @@ const submitStep2 = () => {
     const tipText = recordAttempt[2] >= 2 ? '次数用完，我们直接进入下一题。' : '这次朗读不对，请重新朗读。'
     talkText.value = tipText
     playAudio(tipText)
-
     if (recordAttempt[2] >= 2) {
       status2.value = 'correct'
       step.value = 3
@@ -428,7 +539,6 @@ const submitStep2 = () => {
 
 const submitStep3 = () => {
   const startTime = Date.now()
-  // step3只校验长度，判断是否朗读完整
   const flag = answer3.value.trim().length > 10
   status3.value = flag ? 'correct' : 'wrong'
 
@@ -442,8 +552,32 @@ const submitStep3 = () => {
 
   if (flag || recordAttempt[3] >= 2) {
     status3.value = 'correct'
-    talkText.value = '太棒啦，你已经完成全部任务！'
-    // 提交给LLM接口预留
+    step.value = 4
+    talkText.value = '接下来第4题，请你再朗读一遍，感受赵州桥的美观。'
+  } else {
+    showArticle.value = false
+    const tipText = '朗读内容不够完整，请重新朗读。'
+    talkText.value = tipText
+    playAudio(tipText)
+  }
+  saveState()
+}
+
+const submitStep4 = () => {
+  const startTime = Date.now()
+  const flag = answer4.value.trim().length > 20
+  status4.value = flag ? 'correct' : 'wrong'
+
+  studentRecord.records.push({
+    interaction_id: 4,
+    student_input: answer4.value,
+    is_correct: flag,
+    time_cost: Math.round((Date.now() - startTime) / 1000),
+    attempt_count: recordAttempt[4]
+  })
+
+  if (flag || recordAttempt[4] >= 2) {
+    status4.value = 'correct'
     submitRecordToLLM()
   } else {
     showArticle.value = false
@@ -454,18 +588,15 @@ const submitStep3 = () => {
   saveState()
 }
 
-// 预留LLM点评接口
 const submitRecordToLLM = async () => {
-  console.log('提交交互流水给LLM', JSON.parse(JSON.stringify(studentRecord)))
-  // todo: await axios.post('/api/xxx', studentRecord)
-  // 拿到返回点评文案+音频，赋值talkText并播放
+  console.log('提交全部学生交互流水给LLM', JSON.parse(JSON.stringify(studentRecord)))
+  talkText.value = '太棒啦！你已经完成全部学习任务，你认真朗读课文，体会到赵州桥围绕一个意思写段落的写作方法。'
+  playAudio(talkText.value)
 }
 
-// 模拟按钮
 const mockVoice = () => console.log('开启语音')
 const mockVideo = () => console.log('回看视频')
 
-// ========== 本地持久化，和写写感想完全一致 ==========
 const STORAGE_KEY = 'zhaozhou-bridge-state'
 const saveState = () => {
   const state = {
@@ -473,14 +604,17 @@ const saveState = () => {
     answer1: answer1.value,
     answer2: answer2.value,
     answer3: answer3.value,
+    answer4: answer4.value,
     status1: status1.value,
     status2: status2.value,
     status3: status3.value,
+    status4: status4.value,
     showArticle: showArticle.value,
-    showHuman: showHuman.value,
+    hideHumanWhenArticleOpen: hideHumanWhenArticleOpen.value,
     talkText: talkText.value,
     recordAttempt: { ...recordAttempt },
-    studentRecord: JSON.parse(JSON.stringify(studentRecord))
+    studentRecord: JSON.parse(JSON.stringify(studentRecord)),
+    answerExpand:{...answerExpand}
   }
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
 }
@@ -498,20 +632,22 @@ const restoreState = async () => {
     answer1.value = s.answer1 ?? ''
     answer2.value = s.answer2 ?? ''
     answer3.value = s.answer3 ?? ''
+    answer4.value = s.answer4 ?? ''
     status1.value = s.status1 ?? ''
     status2.value = s.status2 ?? ''
     status3.value = s.status3 ?? ''
+    status4.value = s.status4 ?? ''
     showArticle.value = !!s.showArticle
-    showHuman.value = s.showHuman ?? true
+    hideHumanWhenArticleOpen.value = !!s.hideHumanWhenArticleOpen
     talkText.value = s.talkText ?? ''
-    Object.assign(recordAttempt, s.recordAttempt || { 1: 0, 2: 0, 3: 0 })
+    Object.assign(recordAttempt, s.recordAttempt || { 1: 0, 2: 0, 3: 0,4:0 })
     Object.assign(studentRecord, s.studentRecord || { student_name: '', gender: '', records: [] })
+    Object.assign(answerExpand, s.answerExpand || {1:false,2:false,3:false,4:false})
   } catch {
     await loadTalkText()
   }
 }
 
-// 导航
 const goBack = () => {
   saveState()
   router.back()
@@ -522,7 +658,6 @@ const goHome = () => {
   router.push('/')
 }
 
-// 生命周期
 onMounted(async () => {
   updateScale()
   window.addEventListener('resize', updateScale)
@@ -531,7 +666,6 @@ onMounted(async () => {
 
 onUnmounted(() => {
   window.removeEventListener('resize', updateScale)
-  // 清除全部定时器，防止内存泄露
   Object.values(recordStatus).forEach(item => {
     if (item.timer) clearInterval(item.timer)
   })
@@ -548,7 +682,6 @@ onUnmounted(() => {
   font-family: "Microsoft Yahei", sans-serif;
 }
 
-/* ========== 顶部导航 ========== */
 .top-nav {
   position: absolute;
   top: 30px;
@@ -576,29 +709,32 @@ onUnmounted(() => {
   gap: 12px;
 }
 .nav-btn {
-  /* 只改宽度，其他全部保留原样，按钮拉长 */
-  width: 150px;
-  height: 35px;
+  width: 125px;
+  height: 38px;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  padding: 6px 16px;
-  background: rgb(220, 137, 29);
-  color: #fff;
-  border-radius: 8px;
-  font-size: 15px;
-  font-weight: 300;
+  padding: 0 14px;
+  background: #da9c20;
+  color: #ffffff;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 500;
   letter-spacing: 1px;
-  box-shadow: 0 2px 4px rgba(118, 117, 117, 0.647);
+  box-shadow: 0 3px 6px rgba(0,0,0,0.15);
   cursor: pointer;
+  transition: background 0.24s ease;
+}
+.nav-btn:hover {
+  background: #c48918;
 }
 .btn-icon {
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   object-fit: contain;
 }
 
-/* ========== 课文tab 1:1复制写写感想 ========== */
 .tab-wrapper {
   position: absolute;
   top: 110px;
@@ -644,7 +780,7 @@ onUnmounted(() => {
   object-fit: cover;
 }
 
-/* ========== 数字人 位置完全保留 ========== */
+/* 数字人【位置固定不变，完成任务依旧保留】 */
 .human-wrap {
   position: absolute;
   bottom: 320px;
@@ -655,12 +791,19 @@ onUnmounted(() => {
   width: 160px;
 }
 
-/* 气泡：箭头移到右侧 */
-.human-talk-bubble {
+/* 气泡+按钮容器：flex列布局，按钮跟随气泡高度 */
+.bubble-action-wrap {
   position: absolute;
   right: 170px;
   top: 10px;
   width: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 19px; /* 0.5cm */
+}
+.human-talk-bubble {
+  position: relative;
+  width: 100%;
   background: rgba(255, 255, 255, 0.85);
   border-radius: 12px;
   padding: 14px 16px;
@@ -701,19 +844,60 @@ onUnmounted(() => {
   border-left: 10px solid #fff;
 }
 
-/* ==========【重点】课文弹窗，完全复制写写感想 article-panel 的全部css，位置、大小、背景、关闭按钮一模一样 ========== */
+/* ✅按钮：气泡正下方，由flex布局自动定位 */
+.completion-action-bar {
+  position: relative;
+  width: 100%;
+  display: flex;
+  gap: 12px;
+  z-index: 6;
+}
+.bar-btn-icon {
+  width:18px;
+  height:18px;
+  object-fit:contain;
+}
+.completion-action-btn {
+  flex: 1;
+  height: 44px;
+  border: none;
+  border-radius: 22px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+}
+.report-btn {
+  background: #daa520;
+  color: #ffffff;
+}
+.report-btn:hover {
+  background: #c4941c;
+}
+.home-btn {
+  background: #ffffff;
+  color: #daa520;
+  border:1px solid #daa520;
+}
+.home-btn:hover {
+  background: #fff8e6;
+}
+
 .left-area {
   position: absolute;
   top: 170px;
   left: 60px;
   bottom: 20px;
-  width: 500px;
+  width: 800px;
   z-index: 5;
 }
 .article-close-btn {
   position: absolute;
   top: -50px;
-  right: -200px;
+  right: -150px;
   width: 32px;
   height: 32px;
   border-radius: 50%;
@@ -730,10 +914,10 @@ onUnmounted(() => {
   transform: scale(1.1);
 }
 .article-panel {
-  width: 700px;
-  height: 600px;
+  width: 950px;
+  height: 870px;
   background: rgba(255, 255, 255, 0.8);
-  border-radius: 18px;
+  border-radius: 8px;
   padding: 20px 24px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
   box-sizing: border-box;
@@ -755,10 +939,9 @@ onUnmounted(() => {
   color: #444;
 }
 
-/* ========== 右侧步骤：彻底删除连接线step-line ========== */
 .step-flow {
   position: absolute;
-  top: 140px;
+  top: 150px;
   right: 80px;
   width: 340px;
   z-index: 10;
@@ -788,6 +971,10 @@ onUnmounted(() => {
   background: #f9f9fb;
   color: #f4a907;
 }
+.step-num.passed {
+  background: #2a9d3a;
+  color: #fff;
+}
 .step-card {
   background: #ffffff;
   border-radius: 12px;
@@ -808,6 +995,16 @@ onUnmounted(() => {
   font-size: 14px;
   margin: 0 0 14px;
   line-height: 1.5;
+}
+
+.video-wrap{
+  width:100%;
+  margin-bottom:12px;
+}
+.step-video{
+  width:100%;
+  border-radius:8px;
+  object-fit:cover;
 }
 
 .input-box {
@@ -834,18 +1031,17 @@ onUnmounted(() => {
 .mic-btn {
   position: absolute;
   right: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  border: 1px solid #ddd;
+  bottom: 5px;
+  padding: 5px 14px;
+  border: 1px solid #eff1f5;
   background: #fff;
+  border-radius: 18px;
+  font-size: 14px;
   cursor: pointer;
   display: flex;
   align-items: center;
-  justify-content: center;
-  padding: 0;
+  gap: 4px;
+  color: #333;
 }
 .mic-icon {
   width: 16px;
@@ -853,7 +1049,6 @@ onUnmounted(() => {
   object-fit: contain;
 }
 
-/* 提交按钮内置答题框内部 */
 .submit-inner-btn {
   align-self: center;
   width: 120px;
@@ -866,7 +1061,6 @@ onUnmounted(() => {
   cursor: pointer;
   transition: all 0.2s;
 }
-/* 禁用态样式，灰色 */
 .submit-inner-btn.submit-disable {
   background-color: #dddddd;
   color: #999999;
@@ -878,40 +1072,37 @@ onUnmounted(() => {
 }
 .answer-result {
   width: 100%;
+  margin-top:8px;
 }
 .green-tag {
-  background: #39c757;
-  color: white;
+  background: #a9f07d;
+  border: 1px solid #39c757;
+  color: rgb(5, 5, 5);
   padding: 7px 10px;
-  border-radius: 8px;
+  border-radius: 5px;
   font-size: 14px;
+  line-height:1.5;
+}
+.green-tag.fold{
+  display: -webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+}
+.more-btn{
+  color:#0066ff;
+  font-size:13px;
+  cursor:pointer;
+  margin-top:4px;
 }
 
-/* 完成后按钮，和写写感想完全一致 */
-.completion-action-bar {
+.completion-overlay {
   position: absolute;
-  left: 190px;
-  top: 280px;
-  width: 300px;
-  display: flex;
-  gap: 12px;
-  z-index: 6;
-}
-.completion-action-btn {
-  flex: 1;
-  height: 44px;
-  border: none;
-  border-radius: 22px;
-  font-size: 16px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.report-btn {
-  background: #2a53b8;
-  color: #fff;
-}
-.home-btn {
-  background: #f7c846;
-  color: #fff;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 2;
 }
 </style>

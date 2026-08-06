@@ -21,7 +21,7 @@ const stageModules = ref([
     name: '重温文化采风',
     color: '#EDF5E6',
     tasks: [
-      { id: 'warmup-game', name: '重温文化互动', active: false, finished: false, path: '/warmup' }
+      { id: 'warmup-game', name: '重温文化互动', active: false, finished: false, path: '/warmup/warmup-game' }
     ]
   },
   {

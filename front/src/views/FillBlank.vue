@@ -37,28 +37,35 @@
           alt="数字人"
           class="digital-human-img"
         />
-        <div
-          class="human-talk-bubble"
-          :class="{ expanded: isBubbleExpanded }"
-          v-if="talkText"
-        >
-          <span class="bubble-text">{{ talkText }}</span>
-          <img
-            src="/image/语音朗读.png"
-            alt="播放"
-            class="bubble-voice-icon"
-            @click="playBubbleAudio"
-          />
-          <span class="bubble-arrow"></span>
-        </div>
+        <div class="bubble-action-wrap" v-if="talkText">
+          <div
+            class="human-talk-bubble"
+            :class="{ expanded: isBubbleExpanded }"
+          >
+            <span class="bubble-text">{{ talkText }}</span>
+            <img
+              src="/image/语音朗读.png"
+              alt="播放"
+              class="bubble-voice-icon"
+              @click="playBubbleAudio"
+            />
+            <span class="bubble-arrow"></span>
+          </div>
 
-        <div class="completion-feedback-bubble" v-if="isAllCompleted">
-          <div class="feedback-message">{{ completionMessage }}</div>
-          <span class="bubble-arrow"></span>
-        </div>
-        <div class="completion-action-bar" v-if="isAllCompleted">
-          <button class="completion-action-btn report-btn" @click="goToReport">查看评价</button>
-          <button class="completion-action-btn home-btn" @click="goHome">回到首页</button>
+          <div class="completion-feedback-bubble" v-if="isAllCompleted">
+            <div class="feedback-message">{{ completionMessage }}</div>
+            <span class="bubble-arrow"></span>
+          </div>
+          <div class="completion-action-bar" v-if="isAllCompleted">
+            <button class="completion-action-btn report-btn" @click="goToReport">
+              <img src="/image/矢量 69.png" alt="图标" class="bar-btn-icon" />
+              查看评价
+            </button>
+            <button class="completion-action-btn home-btn" @click="goHome">
+              <img src="/image/back 1.png" alt="图标" class="bar-btn-icon" />
+              回到首页
+            </button>
+          </div>
         </div>
       </div>
 
@@ -817,11 +824,19 @@ onUnmounted(()=>{
   display: block;
   filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.25));
 }
-.human-talk-bubble {
+/* 气泡+按钮容器：flex列布局，按钮跟随气泡高度 */
+.bubble-action-wrap {
   position: absolute;
   left: 190px;
   top: 20px;
   width: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 19px; /* 0.5cm */
+}
+.human-talk-bubble {
+  position: relative;
+  width: 100%;
   background: #fff;
   border-radius: 12px;
   padding: 14px 16px;
@@ -943,10 +958,10 @@ onUnmounted(()=>{
 .question-block {
   margin-bottom: 18px;
   padding-bottom:14px;
-  border-bottom: none;
+  border-bottom:1px dashed #ddd;
 }
 .question-block.current-block {
-  border-bottom: none;
+  border-bottom-color: #ee7104;
 }
 .block-title {
   font-size:17px;
@@ -1100,10 +1115,8 @@ onUnmounted(()=>{
   z-index: 2;
 }
 .completion-feedback-bubble {
-  position: absolute;
-  left: 190px;
-  top: 100px;
-  width: 300px;
+  position: relative;
+  width: 100%;
   background: #fff;
   border-radius: 12px;
   padding: 14px 16px;
@@ -1120,12 +1133,15 @@ onUnmounted(()=>{
   margin: 0;
 }
 .completion-action-bar {
-  position: absolute;
-  left: 190px;
-  top: 280px;
-  width: 300px;
+  position: relative;
+  width: 100%;
   display: flex;
   gap: 12px;
+}
+.bar-btn-icon {
+  width:18px;
+  height:18px;
+  object-fit:contain;
 }
 .completion-action-btn {
   flex: 1;
@@ -1135,19 +1151,24 @@ onUnmounted(()=>{
   font-size: 16px;
   cursor: pointer;
   transition: all 0.2s;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
 }
 .report-btn {
-  background: #2a53b8;
-  color: #fff;
+  background: #daa520;
+  color: #ffffff;
 }
 .report-btn:hover {
-  background: #1e3d8f;
+  background: #c4941c;
 }
 .home-btn {
-  background: #f7c846;
-  color: #fff;
+  background: #ffffff;
+  color: #daa520;
+  border:1px solid #daa520;
 }
 .home-btn:hover {
-  background: #e5b535;
+  background: #fff8e6;
 }
 </style>

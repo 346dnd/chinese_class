@@ -21,13 +21,22 @@ const routes = [
     component: () => import('../views/FillBlank.vue')
   },
   {
+    path: '/warmup/warmup-game',
+    component: () => import('../views/WarmupGame.vue')
+  },
+  {
     path: '/method/qingming',
     component: () => import('../views/HUAExpressMethod.vue')
   },
   {
     path: '/method/zhaozhouqiao',
     component: () => import('../views/ZGQExpressMethod.vue')
-  }
+  },
+  {
+    path: '/create/talk-culture',
+    component: () => import('../views/TalkCulture.vue')
+   }
+
 ]
 
 const router = createRouter({
