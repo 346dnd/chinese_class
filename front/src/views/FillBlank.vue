@@ -108,25 +108,25 @@
                   v-if="item.type === 'input'"
                   class="fill-input-wrap"
                   :class="{
-                    'input-correct': getBlankStatus(block.id, item.blankIndex) === 'correct',
-                    'input-wrong': getBlankStatus(block.id, item.blankIndex) === 'wrong',
-                    'input-autofilled': getBlankStatus(block.id, item.blankIndex) === 'auto-filled',
-                    'input-locked': isBlankLocked(block.id, item.blankIndex)
+                    'input-correct': getBlankStatus(block.id, item.blankIndex!) === 'correct',
+                    'input-wrong': getBlankStatus(block.id, item.blankIndex!) === 'wrong',
+                    'input-autofilled': getBlankStatus(block.id, item.blankIndex!) === 'auto-filled',
+                    'input-locked': isBlankLocked(block.id, item.blankIndex!)
                   }"
-                  @click="onBlankClick(block.id, item.blankIndex)"
+                  @click="onBlankClick(block.id, item.blankIndex!)"
                 >
                   <input
-                    v-if="!isBlankLocked(block.id, item.blankIndex)"
+                    v-if="!isBlankLocked(block.id, item.blankIndex!)"
                     ref="fillInputs"
                     :data-blank-index="item.blankIndex"
                     :data-block-id="block.id"
-                    v-model="blankInputMap[block.id][item.blankIndex]"
+                    v-model="blankInputMap[block.id][item.blankIndex!]"
                     class="fill-input"
-                    @keyup.enter="submitBlank(block.id, item.blankIndex)"
+                    @keyup.enter="submitBlank(block.id, item.blankIndex!)"
                     placeholder="点击输入"
                   />
-                  <span v-else class="locked-text" :class="{ 'locked-correct': getBlankStatus(block.id, item.blankIndex) === 'correct', 'locked-autofilled': getBlankStatus(block.id, item.blankIndex) === 'auto-filled' }">
-                    {{ getBlankShowText(block.id, item.blankIndex) || '点击输入' }}
+                  <span v-else class="locked-text" :class="{ 'locked-correct': getBlankStatus(block.id, item.blankIndex!) === 'correct', 'locked-autofilled': getBlankStatus(block.id, item.blankIndex!) === 'auto-filled' }">
+                    {{ getBlankShowText(block.id, item.blankIndex!) || '点击输入' }}
                   </span>
                 </span>
               </span>
@@ -518,7 +518,7 @@ const submitBlank = async (blockId:string, blankIndex:number) => {
 }
 
 // ========== 提交按钮：切换下一课 ✅修复硬编码映射 ==========
-const handleSubmitAll = () => {
+const handleSubmitAll = async () => {
   if(!canSubmit.value) return
   const nextBid = activeBlockId.value
   if(!nextBid) return
@@ -534,7 +534,7 @@ const handleSubmitAll = () => {
     }
     currentTabId.value = blockToTab[nextBlock.id]
     currentPanel.value = 'human'
-    const text = fetchTalkText(nextBlock.id)
+    const text = await fetchTalkText(nextBlock.id)
     talkText.value = text
     playAudio(text)
     updateSubmitBtnPosition()

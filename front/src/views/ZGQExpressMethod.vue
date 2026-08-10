@@ -311,7 +311,7 @@ const hideHumanWhenArticleOpen = ref(false)
 const showArticle = ref(false)
 const articleHtml = ref(`赵州桥，又称安济桥，位于河北省石家庄市。<br>赵州桥建于隋朝年间，由著名匠师李春设计建造，距今已有1400多年的历史。<br>赵州桥的桥洞不是普通的半圆形，而是像一张弓。<br>赵州桥非常雄伟。桥长五十多米，有九米多宽。<br>赵州桥体现了劳动人民的智慧和才干，是我国宝贵的历史文化遗产。`)
 
-const answerExpand = reactive({1:false,2:false,3:false,4:false})
+const answerExpand = reactive<Record<number, boolean>>({1:false,2:false,3:false,4:false})
 const toggleExpand = (idx:number)=>{
   answerExpand[idx] = !answerExpand[idx]
 }
@@ -326,12 +326,12 @@ const answer2 = ref('')
 const answer3 = ref('')
 const answer4 = ref('')
 
-const recordAttempt = reactive({ 1: 0, 2: 0, 3: 0,4:0 })
-const recordStatus = reactive({
-  1: { recording: false, countdown: 60, timer: null as number | null },
-  2: { recording: false, countdown: 60, timer: null as number | null },
-  3: { recording: false, countdown: 60, timer: null as number | null },
-  4: { recording: false, countdown: 60, timer: null as number | null }
+const recordAttempt = reactive<Record<number, number>>({ 1: 0, 2: 0, 3: 0,4:0 })
+const recordStatus = reactive<Record<number, { recording: boolean; countdown: number; timer: number | null }>>({
+  1: { recording: false, countdown: 60, timer: null },
+  2: { recording: false, countdown: 60, timer: null },
+  3: { recording: false, countdown: 60, timer: null },
+  4: { recording: false, countdown: 60, timer: null }
 })
 
 const steps = ref([

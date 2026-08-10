@@ -47,18 +47,15 @@ const stageModules = ref([
     name: '传承文化践行坊',
     color: '#EDF5E6',
     tasks: [
-      { id: 'homework-main', name: '传承文化任务', active: false, path: '/homework' }
+      { id: 'homework-main', name: '传承文化任务', active: false, finished: false, path: '/homework' }
     ]
   }
 ])
 
-const currentStageId = ref(null)
+const currentStageId = ref<string | null>(null)
 
-const selectStage = (stageId) => {
-  currentStageId.value = currentStageId.value === stageId ? null : stageId
-}
 
-const selectTask = (task) => {
+const selectTask = (task: { id: string; name: string; active: boolean; finished: boolean; path: string }) => {
   router.push(task.path)
 }
 
@@ -67,6 +64,14 @@ const currentTasks = () => {
   return stageModules.value.find(item => item.id === 'preview')?.tasks || []
 }
 
+const selectStage = (stageId: string) => {
+  // 重温文化采风 - 直接跳转到 WarmupGame 页面
+  if (stageId === 'warmup') {
+    router.push('/warmup/warmup-game')
+    return
+  }
+  currentStageId.value = currentStageId.value === stageId ? null : stageId
+}
 const methodTasks = () => {
   return stageModules.value.find(item => item.id === 'method')?.tasks || []
 }
@@ -116,27 +121,19 @@ onUnmounted(() => {
 
 <template>
   <div class="scene-home" :style="homeStyle">
-    <!-- ========== 右上角功能按钮区域（补齐四张图标图片） ========== -->
+    <!-- ========== 右上角功能按钮区域｜垂直3个按钮，沿用原有图片资源 ========== -->
     <div class="top-right-btn-group">
-      <div class="btn-row">
-        <div class="top-right-btn">
-          <img class="btn-icon" src="/image/矢量 128.png" alt="报告图标"/>
-          学习报告
-        </div>
-        <div class="top-right-btn">
-          <img class="btn-icon" src="/image/积分配置 1.png" alt="积分图标"/>
-          我的积分
-        </div>
+      <div class="top-right-btn">
+        <img class="btn-icon" src="/image/报告查询 1.png" alt="报告图标"/>
+        学习报告
       </div>
-      <div class="btn-row">
-        <div class="top-right-btn">
-          <img class="btn-icon" src="/image/group-2-fill 1.png" alt="小组图标"/>
-          学习小组
-        </div>
-        <div class="top-right-btn">
-          <img class="btn-icon" src="/image/朋友圈 1.png" alt="朋友圈图标"/>
-          朋友圈
-        </div>
+      <div class="top-right-btn" @click="selectTask({ id: 'moments', name: '朋友圈', active: false, finished: false, path: '/moments' })">
+        <img class="btn-icon" src="/image/朋友圈 1.png" alt="朋友圈图标"/>
+        朋友圈
+      </div>
+      <div class="top-right-btn">
+        <img class="btn-icon" src="/image/group-2-fill 1.png" alt="小组图标"/>
+        学习小组
       </div>
     </div>
 
@@ -221,7 +218,6 @@ onUnmounted(() => {
 <style scoped>
 /* ===================== 原有全部样式（颜色/数值完全不变） ===================== */
 .scene-home {
-  /* 修改为固定设计稿尺寸，背景填充方式不变 */
   width: 1920px;
   height: 1080px;
   background: url('/image/image 19.png') center center / cover no-repeat;
@@ -454,40 +450,37 @@ onUnmounted(() => {
   object-fit: contain;
 }
 
-/* ===================== 右上角按钮样式（原样保留） ===================== */
+/* ===================== 右上角按钮样式｜垂直排列，原型橙黄色按钮 ===================== */
 .top-right-btn-group {
   position: absolute;
   top: 100px;
-  right: 160px;
+  right: 200px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 30px;
   z-index: 10;
 }
-.btn-row {
-  display: flex;
-  gap: 20px;
-}
+
 .top-right-btn {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  min-width: 160px;
+  min-width: 170px;
   height: 55px;
   padding: 0 16px;
-  background: rgba(207, 196, 163, 0.8);
-  color: #604528;
+  background: #eb9604;
+  color: #ffffff;
   border-radius: 10px;
   box-shadow: 0 2px 8px rgb(23, 22, 22);
-  font-size: 16px;
+  font-size: 20px;
   cursor: pointer;
-  border: 0.5px solid rgb(238, 238, 174);
+  border: 0.5px solid rgba(255, 220, 120, 0.9);
   transition: all 0.22s ease;
   white-space: nowrap;
 }
 .top-right-btn:hover {
-  background: rgba(255, 255, 255, 0.85);
+  background: #FFBC38;
   transform: translateY(-2px);
 }
 .btn-icon {

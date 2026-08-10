@@ -35,7 +35,13 @@ const routes = [
   {
     path: '/create/talk-culture',
     component: () => import('../views/TalkCulture.vue')
+   },
+   {
+    path: '/moments',
+    component: () => import('../views/Moments.vue')
    }
+  
+
 
 ]
 
