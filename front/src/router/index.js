@@ -33,7 +33,7 @@ const routes = [
     component: () => import('../views/ZGQExpressMethod.vue')
   },
   {
-    path: '/create/talk-culture',
+    path: '/creation/talk-culture',
     component: () => import('../views/TalkCulture.vue')
    },
    {
