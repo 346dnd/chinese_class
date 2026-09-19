@@ -1,23 +1,20 @@
 <template>
-  <div class="page-container" :style="pageStyle">
-    <!-- 顶部导航栏 -->
-    <div class="top-nav">
-      <span class="back-icon" @click="goBack">&lt;</span>
-      <span class="nav-title">宣传文化：讲解优秀文化</span>
-      <div class="top-nav-buttons">
-        <div class="nav-btn" @click="mockVoice">
-          <img src="/image/语音 1.png" alt="语音播报" class="btn-icon" />
-          开启语音
-        </div>
-        <div class="nav-btn" @click="mockVideo">
-          <img src="/image/视频 2.png" alt="回看视频" class="btn-icon" />
-          回看视频
-        </div>
-      </div>
-    </div>
+  <ScaleCanvas background="/image/image 125.png">
+    <PageHeader
+      title="宣传文化：讲解优秀文化"
+      @back="goBack"
+      voice-broadcast
+      :voice-on="voiceBroadcastOn"
+      @toggle-voice="playVoiceBroadcast"
+      @video="openVideoModal"
+    />
 
     <!-- 场景人物区域：完成状态提升整体层级 -->
-    <div class="scene-characters-wrap" :class="{ 'scene-high-z': isAllCompleted }">
+    <div
+      class="scene-characters-wrap"
+      v-if="!isAllCompleted"
+      :class="{ 'scene-high-z': isAllCompleted }"
+    >
       <!-- 中间屏幕：外国女孩 -->
       <div class="foreign-girl-area">
         <div class="foreign-bubble">
@@ -41,7 +38,7 @@
       <div class="digital-human-area" :class="{ 'completed-above-overlay': isAllCompleted }">
         <!-- 数字人图片 始终显示 -->
         <img
-          src="/image/罗罗_汉服.psd 1 .png"
+          src="/image/罗罗_汉服 1.png"
           alt="罗罗汉服数字人"
           class="digital-human-img"
           :class="{ 'complete-human-size': isAllCompleted }"
@@ -65,23 +62,13 @@
             <span class="bubble-arrow-right"></span>
           </div>
 
-          <!-- 完成状态反馈气泡 -->
-          <div class="completion-feedback-bubble" v-if="isAllCompleted">
-            <div class="feedback-message">{{ completionMessage }}</div>
-            <span class="bubble-arrow-right"></span>
-          </div>
-
-          <!-- 完成页操作按钮（对齐写写感想 completion-action-bar） -->
-          <div class="completion-action-bar" v-if="isAllCompleted">
-            <button class="completion-action-btn report-btn" @click="goToReport">
-              <img src="/image/矢量 69.png" alt="图标" class="bar-btn-icon" />
-              查看评价
-            </button>
-            <button class="completion-action-btn home-btn" @click="goHome">
-              <img src="/image/back 1.png" alt="图标" class="bar-btn-icon" />
-              回到首页
-            </button>
-          </div>
+          <CompletionFeedback
+            :show="isAllCompleted"
+            :message="completionMessage"
+            @go-report="goToReport"
+            @go-home="goHome"
+            @play-audio="playBubbleAudio"
+          />
         </div>
       </div>
     </div>
@@ -110,92 +97,125 @@
       </div>
 
       <!-- 输入交互区：未完成时显示 -->
-      <div class="input-operation-wrap" v-if="!isAllCompleted">
-        <div class="feel-input-box">
-          <textarea
-            class="feel-input"
-            v-model="userInput"
-            :class="{
-              'input-invalid': currentSubmitStatus === 'wrong',
-              'has-content': !isInputEmpty,
-              'text-red': currentSubmitStatus === 'wrong'
-            }"
-            placeholder="输入你的文化宣传文案..."
-          ></textarea>
-          <div class="func-btn-group">
-            <button class="func-btn" @click="handleVoice">
-              <img src="/image/矢量 62.png" alt="语音" class="func-icon-img" />
-              <span class="func-text">语音</span>
+        <div class="input-operation-wrap" v-if="!isAllCompleted">
+          <div class="submit-btn-wrap">
+            <button
+              class="submit-btn"
+              :class="{ 'submit-disabled': isInputEmpty }"
+              :disabled="isInputEmpty"
+              @click="handleSubmit"
+            >
+              {{ currentAttempts >= 2 ? '结束任务' : '发送' }}
             </button>
-            <button class="func-btn" @click="handlePhoto">
-              <img src="/image/矢量 65.png" alt="拍照" class="func-icon-img" />
-              <span class="func-text">拍照</span>
-            </button>
-            <input
-              ref="photoInputRef"
-              type="file"
-              accept="image/*"
-              capture="environment"
-              style="display: none"
-              @change="onPhotoCapture"
+          </div>
+          <div class="feel-input-box">
+            <textarea
+              class="feel-input"
+              v-model="userInput"
+              :class="{
+                'input-invalid': currentSubmitStatus === 'wrong',
+                'has-content': !isInputEmpty,
+                'text-red': currentSubmitStatus === 'wrong'
+              }"
+              placeholder="输入你的文化宣传文案..."
+            ></textarea>
+            <div class="func-btn-group">
+              <button class="func-btn" :class="{ 'is-recording': isRecording }" @click="handleVoice">
+                <img src="/image/矢量 62.png" alt="语音" class="func-icon-img" />
+                <span class="func-text">{{ isTranscribing ? '识别中…' : isRecording ? '停止录音' : '语音' }}</span>
+              </button>
+              <button class="func-btn" @click="handlePhoto">
+                <img src="/image/矢量 65.png" alt="拍照" class="func-icon-img" />
+                <span class="func-text">{{ uploading ? '上传中…' : '拍照' }}</span>
+              </button>
+              <input
+                ref="photoInputRef"
+                type="file"
+                accept="image/*"
+                capture="environment"
+                style="display: none"
+                @change="onPhotoCapture"
+              />
+            </div>
+            <div class="capture-preview" v-if="capturedImageUrl">
+              <img :src="capturedImageUrl" alt="拍照作答" class="capture-img" />
+              <span class="capture-tip">已识别并填入输入框</span>
+            </div>
+          </div>
+        </div>
+    </div>
+  </ScaleCanvas>
+
+  <!-- 完成全屏遮罩：移出 ScaleCanvas 默认插槽（置于视口级），确保 fixed 真正相对视口、z-index 盖住整页含 header -->
+  <CompletionOverlay :show="isAllCompleted">
+      <div class="scene-characters-wrap">
+        <div class="foreign-girl-area">
+          <div class="foreign-bubble">
+            <span class="bubble-text">{{ foreignGirlTalk }}</span>
+            <img
+              src="/image/语音朗读.png"
+              alt="播放"
+              class="bubble-voice-icon-right"
+              @click="playForeignBubbleAudio"
+            />
+            <span class="bubble-arrow-bottom"></span>
+          </div>
+          <img
+            src="/image/外国女孩 1.png"
+            alt="外国女孩"
+            class="foreign-girl-img"
+          />
+        </div>
+        <div class="digital-human-area">
+          <img
+            src="/image/罗罗_汉服 1.png"
+            alt="罗罗汉服数字人"
+            class="digital-human-img"
+            :class="{ 'complete-human-size': isAllCompleted }"
+          />
+          <div class="bubble-action-wrap" v-if="talkText || isAllCompleted">
+            <CompletionFeedback
+              :show="isAllCompleted"
+              :message="completionMessage"
+              @go-report="goToReport"
+              @go-home="goHome"
             />
           </div>
         </div>
-        <div class="submit-btn-wrap">
-          <button
-            class="submit-btn"
-            :class="{ 'submit-disabled': isInputEmpty }"
-            :disabled="isInputEmpty"
-            @click="handleSubmit"
-          >
-            {{ currentAttempts >= 2 ? '结束任务' : '发送' }}
-          </button>
-        </div>
       </div>
-    </div>
+    </CompletionOverlay>
 
-    <!-- 完成全屏遮罩 -->
-    <div class="completion-overlay" v-if="isAllCompleted"></div>
-  </div>
+  <!-- 回看视频弹窗 -->
+  <VideoModal v-model:show="showVideoModal" :url="apiParams?.introVideo?.url || ''" />
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, reactive, computed, onMounted, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import ScaleCanvas from '../components/ScaleCanvas.vue'
+import PageHeader from '../components/PageHeader.vue'
+import CompletionOverlay from '../components/CompletionOverlay.vue'
+import CompletionFeedback from '../components/completion/CompletionFeedback.vue'
+import VideoModal from '../components/VideoModal.vue'
+import { useCompletionNav } from '../components/completion/useCompletionNav'
+import { useAudioPlayer } from '../composables/useAudioPlayer'
+import { useFile } from '../composables/useFile'
+import { getHeritageCulturalParams, getHeritageCulturalState, submitHeritageCultural, getHeritageCulturalSubmitResult, getHeritageCulturalEnding , toUserFriendlyError, getTranscription } from '../api'
+import { useCompletionPersistence } from '../composables/useCompletionPersistence'
+import type { HeritageCulturalParams, HeritageCulturalState } from '../types'
 
 const router = useRouter()
 const photoInputRef = ref<HTMLInputElement | null>(null)
 const rightContainerRef = ref<HTMLElement | null>(null)
 
-// ========== 基础适配配置 ==========
-const DESIGN_WIDTH = 1920
-const DESIGN_HEIGHT = 1080
-const pageStyle = ref({
-  transform: 'scale(1)',
-  transformOrigin: 'top left',
-  width: DESIGN_WIDTH + 'px',
-  height: DESIGN_HEIGHT + 'px',
-  marginLeft: '0px',
-  marginTop: '0px'
-})
-const updateScale = () => {
-  const scaleX = window.innerWidth / DESIGN_WIDTH
-  const scaleY = window.innerHeight / DESIGN_HEIGHT
-  pageStyle.value = {
-    transform: `scale(${scaleX}, ${scaleY})`,
-    transformOrigin: 'top left',
-    width: DESIGN_WIDTH + 'px',
-    height: DESIGN_HEIGHT + 'px',
-    marginLeft: '0px',
-    marginTop: '0px'
-  }
-}
+// ========== API 状态 ==========
+const apiParams = ref<HeritageCulturalParams | null>(null)
+const apiState = ref<HeritageCulturalState | null>(null)
 
 // ========== 页面文案 ==========
-const foreignGirlTalk = ref('Hello! Let us learn excellent traditional Chinese culture together~')
-const talkText = ref('同学，请你撰写一段优秀传统文化宣传文案，介绍文化特色与生活意义吧。')
+const foreignGirlTalk = ref('')
+const talkText = ref('')
 const isBubbleExpanded = ref(true)
-const hasInitPlay = ref(false)
 
 // ========== 答题核心数据 ==========
 const userInput = ref('')
@@ -215,6 +235,45 @@ const isAllCompleted = computed(() => {
   return historyAnswerList.some(item => item.isFinalPass) || currentAttempts.value >= 3
 })
 
+// ========== 本地答题缓存（跨刷新持久化）==========
+const {
+  markCompleted: markTalkCultureCompleted,
+  loadProgress: loadTalkCultureProgress,
+  saveProgress: saveTalkCultureProgress,
+  isCompleted: isTalkCultureCompleted,
+} = useCompletionPersistence('talk-culture')
+
+interface TalkCultureSnapshot {
+  historyAnswerList: Array<{ stuContent: string; aiOptContent: string; isFinalPass: boolean; showOptContent: boolean }>
+  currentAttempts: number
+}
+
+const buildTalkCultureSnapshot = (): TalkCultureSnapshot => ({
+  historyAnswerList: historyAnswerList.map(r => ({ ...r })),
+  currentAttempts: currentAttempts.value
+})
+
+const applyTalkCultureSnapshot = (snap: TalkCultureSnapshot | null): boolean => {
+  if (!snap) return false
+  historyAnswerList.splice(0, historyAnswerList.length, ...(snap.historyAnswerList || []).map(r => ({ ...r })))
+  currentAttempts.value = snap.currentAttempts || 0
+  return true
+}
+
+// 答题记录变化即存（含 AI 反馈更新），刷新后原样恢复
+watch([historyAnswerList, currentAttempts], () => {
+  saveTalkCultureProgress(buildTalkCultureSnapshot() as unknown as Record<string, unknown>)
+}, { deep: true })
+
+// 全部完成后写入本地完成态（含答题快照），刷新仍停留在完成屏；首页「讲解优秀文化」变绿
+watch(isAllCompleted, async (val) => {
+  if (val) {
+    markTalkCultureCompleted(buildTalkCultureSnapshot() as unknown as Record<string, unknown>)
+    const { useProgressStore } = await import('../stores/progress')
+    useProgressStore().markTaskFinished('talk-culture')
+  }
+})
+
 // 完成页反馈文案
 const completionMessage = computed(() => {
   const last = historyAnswerList.at(-1)
@@ -224,10 +283,22 @@ const completionMessage = computed(() => {
     : '本次作答已完成，参考范文可以帮助你优化文案，记得多多练习~'
 })
 
-// ========== mock方法 ==========
-const playAudio = (text: string) => {
-  console.log('播放语音文本：', text)
-}
+// ========== 音频播放 ==========
+const { isPlaying, playAudio, stop } = useAudioPlayer()
+
+// ========== 文件上传 / OCR / 录音 ==========
+const {
+  uploadImage,
+  ocrImageFile,
+  startRecording,
+  stopRecordingAndUpload,
+  uploading,
+  isRecording
+} = useFile()
+const capturedImageUrl = ref('')
+const audioUrl = ref('')
+// 录音上传后正在调用后端语音转文字（ASR）接口
+const isTranscribing = ref(false)
 const playForeignBubbleAudio = () => {
   foreignGirlTalk.value && playAudio(foreignGirlTalk.value)
 }
@@ -235,162 +306,196 @@ const playBubbleAudio = () => {
   isBubbleExpanded.value = true
   talkText.value && playAudio(talkText.value)
 }
-const mockVoice = () => console.log('开启语音播报')
-const mockVideo = () => console.log('回看数字人讲解视频')
-
-// AI批改模拟
-const mockValidateAnswer = async (content: string): Promise<{
-  isPass: boolean
-  aiOptText: string
-}> => {
-  return new Promise(resolve => {
-    setTimeout(() => {
-      const isPass = content.trim().length >= 30
-      const optText = isPass
-        ? `${content}，补充延伸：该传统文化承载千年生活智慧，日常传承可丰富精神生活、增强文化认同感。`
-        : '文案内容较短，请补充文化具体亮点、现实价值两部分内容，完善宣传逻辑。'
-      resolve({ isPass, aiOptText: optText })
-    }, 600)
-  })
+// ========== 顶部导航功能 ==========
+// 语音播报开关：开启时播报当前数字人引导语，关闭时停止（与 PromoteCulture 创作页一致）
+const voiceBroadcastOn = ref(true)
+const playVoiceBroadcast = () => {
+  voiceBroadcastOn.value = !voiceBroadcastOn.value
+  if (voiceBroadcastOn.value) {
+    if (talkText.value) playAudio(talkText.value)
+  } else {
+    stop()
+  }
 }
-
-// OCR拍照模拟
-const recognizeOCR = async (file: File): Promise<string> => {
-  return new Promise(resolve => {
-    setTimeout(() => resolve('OCR识别结果，可手动修改文案内容'), 800)
-  })
+// 回看视频：打开视频弹窗，播放后端 params.introVideo.url
+const showVideoModal = ref(false)
+const openVideoModal = () => {
+  showVideoModal.value = true
 }
 
 // ========== 交互逻辑 ==========
 const handleSubmit = async () => {
   if (isInputEmpty.value) return
   currentAttempts.value += 1
-  const res = await mockValidateAnswer(userInput.value)
 
-  const needShowOpt = res.isPass || currentAttempts.value >= 3
-  const recordItem = {
-    stuContent: userInput.value,
-    aiOptContent: res.aiOptText,
-    isFinalPass: res.isPass,
-    showOptContent: needShowOpt
-  }
-  historyAnswerList.push(recordItem)
+  try {
+    const { submitId } = await submitHeritageCultural(userInput.value)
 
-  if (res.isPass) {
-    currentSubmitStatus.value = 'correct'
-    setTimeout(() => playAudio(`恭喜作答合格，优化范文解读：${res.aiOptText}`), 1000)
-  } else {
-    currentSubmitStatus.value = 'wrong'
-    if (currentAttempts.value >= 3) {
-      recordItem.isFinalPass = true
-      setTimeout(() => playAudio(`本次作答待优化，参考范文讲解：${res.aiOptText}`), 1000)
+    // 轮询评测结果
+    let result = await getHeritageCulturalSubmitResult(submitId)
+    for (let i = 0; i < 10 && result.isProcessing; i++) {
+      await new Promise(r => setTimeout(r, 1000))
+      result = await getHeritageCulturalSubmitResult(submitId)
     }
-  }
 
-  userInput.value = ''
-  nextTick(() => {
-    if (rightContainerRef.value) {
-      rightContainerRef.value.scrollTop = 0
+    const needShowOpt = result.isPassed || currentAttempts.value >= 3
+    const recordItem = {
+      stuContent: userInput.value,
+      aiOptContent: result.feedback || '',
+      isFinalPass: result.isPassed,
+      showOptContent: needShowOpt
     }
-  })
+    historyAnswerList.push(recordItem)
+
+    if (result.isPassed) {
+      currentSubmitStatus.value = 'correct'
+      setTimeout(() => playAudio(result.feedback), 1000)
+    } else {
+      currentSubmitStatus.value = 'wrong'
+      if (currentAttempts.value >= 3) {
+        recordItem.isFinalPass = true
+        // 调用结束语接口
+        try {
+          const ending = await getHeritageCulturalEnding()
+          if (ending.comment) {
+            setTimeout(() => playAudio(ending.comment), 2000)
+          }
+        } catch (e) {
+          console.error('获取结束语失败:', e)
+        }
+      }
+    }
+
+    userInput.value = ''
+    nextTick(() => {
+      if (rightContainerRef.value) {
+        rightContainerRef.value.scrollTop = 0
+      }
+    })
+  } catch (e) {
+    console.error('提交失败:', e)
+    talkText.value = toUserFriendlyError(e)
+    playAudio(talkText.value)
+  }
 }
 
-const handleVoice = () => console.log('唤起语音输入')
+// 语音：点击开始录音，再次点击停止并上传音频，上传后调后端 ASR 把文字回填输入框
+const handleVoice = async () => {
+  try {
+    if (!isRecording.value) {
+      await startRecording()
+    } else {
+      const res = await stopRecordingAndUpload({ resource_info: '宣传优秀文化-语音作答' })
+      audioUrl.value = res.url
+      // 语音转文字：调后端 GET /utils/transcriptions/{resourceId} 轮询识别结果
+      const resourceId = res.resp.resource_id ?? ''
+      if (resourceId) {
+        isTranscribing.value = true
+        try {
+          let text = ''
+          for (let i = 0; i < 6; i++) {
+            if (i > 0) await new Promise(r => setTimeout(r, 500))
+            const t = await getTranscription(resourceId)
+            if (t && t.text) { text = t.text; break }
+          }
+          if (text.trim()) {
+            userInput.value = userInput.value ? `${userInput.value}\n${text}` : text
+          }
+        } catch (e) {
+          console.error('语音识别失败:', e)
+        } finally {
+          isTranscribing.value = false
+        }
+      }
+    }
+  } catch (e: any) {
+    console.error('语音录制上传失败:', e)
+    talkText.value = e?.message || '无法启动麦克风，请检查浏览器权限设置。'
+  }
+}
+
 const handlePhoto = () => photoInputRef.value?.click()
+
+// 拍照：上传图片 → OCR 识别文字填入输入框 → 预览图
 const onPhotoCapture = async (e: Event) => {
   const target = e.target as HTMLInputElement
   const file = target.files?.[0]
   if (!file) return
-  const ocrRes = await recognizeOCR(file)
-  userInput.value = ocrRes
-  target.value = ''
+  try {
+    const img = await uploadImage(file, { resource_info: '宣传优秀文化-拍照作答' })
+    capturedImageUrl.value = img.url
+    const text = await ocrImageFile(file, { resource_info: '宣传优秀文化-手写识别' })
+    if (text && text.trim()) {
+      userInput.value = userInput.value ? `${userInput.value}\n${text}` : text
+    }
+  } catch (err: any) {
+    console.error('拍照上传/OCR 失败:', err)
+  } finally {
+    target.value = ''
+  }
 }
 
 // ========== 导航跳转 ==========
 const goBack = () => router.push('/')
-const goToReport = () => router.push('/report')
-const goHome = () => router.push('/')
-
-// 首次进入自动播放
-const initFirstPlay = async () => {
-  if (hasInitPlay.value) return
-  hasInitPlay.value = true
-  playAudio(foreignGirlTalk.value)
-  setTimeout(() => {
-    playAudio(talkText.value)
-  }, 3000)
-}
+const { goToReport, goHome } = useCompletionNav()
 
 // ========== 生命周期 ==========
-onMounted(() => {
-  updateScale()
-  window.addEventListener('resize', updateScale)
-  initFirstPlay()
-})
-onUnmounted(() => {
-  window.removeEventListener('resize', updateScale)
+onMounted(async () => {
+  try {
+    const [params, state] = await Promise.all([
+      getHeritageCulturalParams(),
+      getHeritageCulturalState()
+    ])
+    apiParams.value = params
+    apiState.value = state
+
+    // 从 introBubbles 设置对话文案
+    if (params.introBubbles && params.introBubbles.length > 0) {
+      const foreignerBubble = params.introBubbles.find(b => b.role === 'foreigner')
+      const nativeBubble = params.introBubbles.find(b => b.role === 'native')
+      if (foreignerBubble) foreignGirlTalk.value = foreignerBubble.text
+      if (nativeBubble) talkText.value = nativeBubble.text
+    }
+
+    // 从 submitLogs 恢复历史记录
+    if (state.submitLogs && state.submitLogs.length > 0) {
+      state.submitLogs.forEach(log => {
+        historyAnswerList.push({
+          stuContent: log.submittedText,
+          aiOptContent: log.feedback || '',
+          isFinalPass: log.isPassed,
+          showOptContent: log.isCompleted
+        })
+      })
+      currentAttempts.value = state.submitLogs.length
+    }
+
+    // 本地已完成但后端数据不全 → 以本地快照为准，停留在完成屏
+    if (!isAllCompleted.value && isTalkCultureCompleted()) {
+      applyTalkCultureSnapshot(loadTalkCultureProgress<Record<string, unknown>>() as unknown as TalkCultureSnapshot)
+    }
+
+    // 未完成才播导入对话；完成态恢复时静默
+    if (!isAllCompleted.value) {
+      setTimeout(() => playAudio(foreignGirlTalk.value), 500)
+      setTimeout(() => playAudio(talkText.value), 3500)
+    }
+  } catch (e) {
+    console.error('加载宣传文化数据失败:', e)
+    // 后端不可用：用本地快照兜底恢复答题记录/完成态
+    if (!applyTalkCultureSnapshot(loadTalkCultureProgress<Record<string, unknown>>() as unknown as TalkCultureSnapshot)) {
+      talkText.value = toUserFriendlyError(e)
+    } else if (!isAllCompleted.value) {
+      talkText.value = '后端服务暂不可用，已恢复你之前的答题记录。'
+    }
+  }
 })
 </script>
 
 <style scoped>
-.page-container {
-  width: 1920px;
-  height: 1080px;
-  background: url('/image/image 125.png') no-repeat center center;
-  background-size: cover;
-  position: relative;
-  overflow: hidden;
-}
+
 
 /* ========== 顶部导航栏 ========== */
-.top-nav {
-  position: absolute;
-  top: 30px;
-  left: 60px;
-  right: 60px;
-  height: 65px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 0 25px;
-  background: rgba(245, 244, 243, 0.45);
-  border-radius: 12px;
-  color: #4e1b05ed;
-  font-weight: 900;
-  font-size: 25px;
-  z-index: 20;
-}
-.back-icon {
-  font-size: 22px;
-  cursor: pointer;
-}
-.top-nav-buttons {
-  margin-left: auto;
-  display: flex;
-  gap: 12px;
-}
-.nav-btn {
-  width: 120px;
-  height: 35px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 16px;
-  background: rgb(220, 137, 29);
-  color: #fff;
-  border-radius: 8px;
-  font-size: 15px;
-  font-weight: 300;
-  letter-spacing: 1px;
-  box-shadow: 0 2px 4px rgba(118, 117, 117, 0.647);
-  cursor: pointer;
-}
-.btn-icon {
-  width: 18px;
-  height: 18px;
-  object-fit: contain;
-}
-
 /* ========== 场景人物区域 ========== */
 .scene-characters-wrap {
   position: absolute;
@@ -431,6 +536,13 @@ onUnmounted(() => {
   line-height: 1.6;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
   margin-bottom: 12px;
+  max-height: 60vh; /* 超长才限高滑动，滚动条隐藏 */
+  overflow-y: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+.foreign-bubble::-webkit-scrollbar {
+  display: none; /* WebKit/Blink 隐藏滚动条 */
 }
 .bubble-voice-icon-right {
   position: absolute;
@@ -509,9 +621,14 @@ onUnmounted(() => {
 }
 .bubble-text {
   flex: 1;
-  max-height: 72px;
-  overflow: hidden;
+  max-height: 60vh; /* 不固定长度：短文自适应，超长才限高滑动，滚动条隐藏 */
+  overflow-y: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
   transition: max-height 0.3s ease;
+}
+.bubble-text::-webkit-scrollbar {
+  display: none; /* WebKit/Blink 隐藏滚动条 */
 }
 .human-talk-bubble.expanded .bubble-text {
   max-height: none;
@@ -529,89 +646,54 @@ onUnmounted(() => {
   border-left: 10px solid #ffffff;
 }
 
-.completion-feedback-bubble {
-  position: relative;
-  width: 100%;
-  background: #fff;
-  border-radius: 12px;
-  padding: 14px 16px;
-  font-size: 15px;
-  line-height: 1.6;
-  color: #333;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
-}
-.feedback-message {
-  font-size: 14px;
-  color: #333;
-  line-height: 1.6;
-  white-space: pre-line;
-  margin: 0;
-}
-
-/* 完成页操作按钮栏 */
-.completion-action-bar {
-  position: relative;
-  width: 100%;
-  display: flex;
-  gap: 12px;
-}
-.completion-action-btn {
-  flex: 1;
-  height: 44px;
-  border: none;
-  border-radius: 22px;
-  font-size: 16px;
-  cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-}
-.bar-btn-icon {
-  width: 18px;
-  height: 18px;
-  object-fit: contain;
-}
-.report-btn {
-  background: #daa520;
-  color: #ffffff;
-}
-.report-btn:hover {
-  background: #c4941c;
-}
-.home-btn {
-  background: #ffffff;
-  color: #daa520;
-  border: 1px solid #daa520;
-}
-.home-btn:hover {
-  background: #fff8e6;
-}
-
 /* ========== 左下角答题区域 ========== */
 .bottom-input-area {
   position: absolute;
-  left: 80px;
+  left: 2.5%;
+  right: 2.5%;
   bottom: 60px;
   z-index: 10;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 16px;
+  /* 答题区统一宽度：输入框 / 历史作答 / 发送按钮 三处共用（均 width:var(--talk-input-w); margin:0 auto），
+     改这里即可整体调整。用 cm 单位（与发送按钮 2.5cm 一致），当前比上版 15cm 再短 2.5cm = 12.5cm，
+     三处保持等长、按钮跟随左对齐；完成态答案卡片也共用本变量，与输入框一样长。 */
+  --talk-input-w: 12.5cm;
 }
 .bottom-input-area.complete-mode {
+  left: 2%;
+  right: auto;
+  width: 46%;
+  bottom: auto;
+  top: 16%;
   z-index: 12;
 }
+/* 完成态：学生答案卡片与输入框同宽（共用 --talk-input-w，居中），不再占满 46% 整列，避开右侧数字人/外国女孩气泡 */
+.bottom-input-area.complete-mode .history-answer-list {
+  width: var(--talk-input-w);
+  margin: 0 auto;
+  /* 最后一页(查看评价/回到首页)：全部答案一次显示，不出现右侧滚动框 */
+  max-height: none;
+  overflow: visible;
+}
+.bottom-input-area.complete-mode .submit-btn-wrap,
+.bottom-input-area.complete-mode .feel-input-box {
+  width: 100%;
+  margin: 0;
+}
 
-/* 历史作答列表 */
+/* 历史作答列表：与输入框同宽（共用 --talk-input-w 居中），保证"你的作品"卡片和输入框一样长 */
 .history-answer-list {
   display: flex;
   flex-direction: column;
   gap: 14px;
   max-height: 260px;
   overflow-y: auto;
-  width: 520px;
+  padding-top: 16px;
+  width: var(--talk-input-w);
+  margin: 0 auto;
 }
 .history-item-block {
   display: flex;
@@ -647,10 +729,10 @@ onUnmounted(() => {
   background: inherit;
   color: inherit;
   border: none;
-  font-size: 13px;
-  padding: 2px 10px;
+  font-size: 18px;
+  padding: 2px 12px;
   border-radius: 4px;
-  font-weight: 500;
+  font-weight: 700;
 }
 .stu-content-text {
   font-size: 15px;
@@ -674,10 +756,10 @@ onUnmounted(() => {
   background: #fff9cc;
   color: #947000;
   border: none;
-  font-size: 13px;
-  padding: 2px 10px;
+  font-size: 18px;
+  padding: 2px 12px;
   border-radius: 4px;
-  font-weight: 500;
+  font-weight: 700;
 }
 .ai-ref-text {
   font-size: 14px;
@@ -688,13 +770,15 @@ onUnmounted(() => {
 
 /* 输入操作区 */
 .input-operation-wrap {
-  width: 520px;
+  width: 100%;
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 .feel-input-box {
   position: relative;
+  width: var(--talk-input-w);
+  margin: 0 auto;
 }
 .feel-input {
   width: 100%;
@@ -745,16 +829,42 @@ onUnmounted(() => {
   height: 16px;
   object-fit: contain;
 }
+.func-btn.is-recording {
+  border-color: #e53935;
+  background: #fdecec;
+}
+.func-btn.is-recording .func-text {
+  color: #e53935;
+}
+.capture-preview {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.capture-img {
+  max-width: 120px;
+  max-height: 90px;
+  border-radius: 8px;
+  border: 1px solid #eee;
+  object-fit: cover;
+}
+.capture-tip {
+  font-size: 12px;
+  color: #888;
+}
 
 .submit-btn-wrap {
   display: flex;
   justify-content: flex-start;
+  width: var(--talk-input-w);
+  margin: 0 auto;
 }
 .submit-btn {
-  width: 130px;
-  height: 44px;
-  border: none;
-  border-radius: 22px;
+  width: 2.5cm;
+  min-height: 38px;
+  border: 1.5px solid #c8920f;
+  border-radius: 8px;
   background: #daa520;
   color: #fff;
   font-size: 16px;
@@ -765,19 +875,5 @@ onUnmounted(() => {
   background: #e3e1e1;
   cursor: not-allowed;
   color: #b2afaf;
-}
-
-/* 完成遮罩 */
-.completion-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.65);
-  z-index: 11;
-}
-.digital-human-area.completed-above-overlay {
-  z-index: 16;
 }
 </style>

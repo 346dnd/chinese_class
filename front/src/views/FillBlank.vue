@@ -1,20 +1,13 @@
 <template>
-  <div class="page-container" :style="pageStyle">
-    <!-- 顶部导航栏 -->
-    <div class="top-nav">
-      <span class="back-icon" @click="goBack">&lt;</span>
-      <span class="nav-title">寻找文化：初步感悟</span>
-      <div class="top-nav-buttons">
-        <div class="nav-btn" @click="mockVoice">
-          <img src="/image/语音 1.png" alt="开启语音" class="btn-icon" />
-          语音播报
-        </div>
-        <div class="nav-btn" @click="mockVideo">
-          <img src="/image/视频 2.png" alt="回看视频" class="btn-icon" />
-          回看视频
-        </div>
-      </div>
-    </div>
+  <ScaleCanvas background="/image/image 110.png">
+    <PageHeader
+      title="寻找文化：初步感悟"
+      @back="goBack"
+      voice-broadcast
+      :voice-on="voiceBroadcastOn"
+      @toggle-voice="playVoiceBroadcast"
+      @video="openVideoModal"
+    />
 
     <!-- 课文标签切换 -->
     <div class="tab-wrapper">
@@ -29,53 +22,32 @@
       </div>
     </div>
 
-    <!-- 左侧区域：数字人 + 对话框 或 课文内容【完全copy写写感想】 -->
+    <!-- 左侧区域：数字人 + 对话框 或 课文内容【复用组件】 -->
     <div class="left-area">
-      <div class="digital-human-area" v-if="currentPanel === 'human'">
-        <img
-          src="/image/小小_汉服 1.png"
-          alt="数字人"
-          class="digital-human-img"
-        />
-        <div class="bubble-action-wrap" v-if="talkText">
-          <div
-            class="human-talk-bubble"
-            :class="{ expanded: isBubbleExpanded }"
-          >
-            <span class="bubble-text">{{ talkText }}</span>
-            <img
-              src="/image/语音朗读.png"
-              alt="播放"
-              class="bubble-voice-icon"
-              @click="playBubbleAudio"
-            />
-            <span class="bubble-arrow"></span>
-          </div>
+      <DigitalHumanBubble
+        v-if="currentPanel === 'human' && !isAllCompleted"
+        :image="'/image/小小_汉服 1.png'"
+        :talk-text="talkText"
+        :is-expanded="isBubbleExpanded"
+        @play-bubble-audio="playBubbleAudio"
+      >
+        <template #feedback>
+          <CompletionFeedback
+            :show="isAllCompleted"
+            :message="completionMessage"
+            @go-report="goToReport"
+            @go-home="goHome"
+            @play-audio="playBubbleAudio"
+          />
+        </template>
+      </DigitalHumanBubble>
 
-          <div class="completion-feedback-bubble" v-if="isAllCompleted">
-            <div class="feedback-message">{{ completionMessage }}</div>
-            <span class="bubble-arrow"></span>
-          </div>
-          <div class="completion-action-bar" v-if="isAllCompleted">
-            <button class="completion-action-btn report-btn" @click="goToReport">
-              <img src="/image/矢量 69.png" alt="图标" class="bar-btn-icon" />
-              查看评价
-            </button>
-            <button class="completion-action-btn home-btn" @click="goHome">
-              <img src="/image/back 1.png" alt="图标" class="bar-btn-icon" />
-              回到首页
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div class="article-close-btn" v-if="currentPanel === 'lesson'" @click="closeArticle">×</div>
-      <div class="article-panel" v-if="currentPanel === 'lesson'">
-        <div class="article-content">
-          <h3 class="article-title">{{ currentTabName }}</h3>
-          <div class="article-body" v-html="currentArticleContent"></div>
-        </div>
-      </div>
+      <ArticleReader
+        v-if="currentPanel === 'lesson'"
+        :visible="currentPanel === 'lesson'"
+        :htmlContent="currentArticleContent"
+        @close="closeArticle"
+      />
     </div>
 
     <!-- 右侧答题容器：填空题型 -->
@@ -133,6 +105,8 @@
             </div>
           </div>
         </transition-group>
+        <!-- 提交中提示：无背景、无边框 -->
+        <div v-if="isSubmitting" class="submitting-hint">提交中…</div>
       </div>
     </div>
 
@@ -147,42 +121,52 @@
       提交答案
     </div>
 
-    <div class="completion-overlay" v-if="isAllCompleted"></div>
-  </div>
+  </ScaleCanvas>
+
+  <!-- 完成态：放在 ScaleCanvas 之外（视口级），fixed 相对视口、z-index 盖住整页含 header -->
+  <CompletionOverlay :show="isAllCompleted">
+      <div class="left-area">
+        <DigitalHumanBubble
+          :image="'/image/小小_汉服 1.png'"
+          :talk-text="talkText"
+          :is-expanded="isBubbleExpanded"
+          @play-bubble-audio="playBubbleAudio"
+        >
+          <template #feedback>
+            <CompletionFeedback
+              :show="isAllCompleted"
+              :message="completionMessage"
+              @go-report="goToReport"
+              @go-home="goHome"
+            />
+          </template>
+        </DigitalHumanBubble>
+      </div>
+    </CompletionOverlay>
+
+  <!-- 回看视频弹窗 -->
+  <VideoModal v-model:show="showVideoModal" :url="apiParams?.introVideo?.url || ''" />
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
+import { ref, reactive, computed, onMounted, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import ScaleCanvas from '../components/ScaleCanvas.vue'
+import PageHeader from '../components/PageHeader.vue'
+import CompletionOverlay from '../components/CompletionOverlay.vue'
+import { useAudioPlayer } from '../composables/useAudioPlayer'
+import { lessonSource } from '../utils/lessonText'
+import DigitalHumanBubble from '../components/DigitalHumanBubble.vue'
+import CompletionFeedback from '../components/completion/CompletionFeedback.vue'
+import VideoModal from '../components/VideoModal.vue'
+import { useCompletionNav } from '../components/completion/useCompletionNav'
+import ArticleReader from '../components/ArticleReader.vue'
+import { getInitialInsightParams, getInitialInsightState, submitInitialInsight, getInitialInsightSubmitResult, getInitialInsightEnding , toUserFriendlyError } from '../api'
+import { useCompletionPersistence } from '../composables/useCompletionPersistence'
+import type { InitialImpressionsParams, InitialInsightState } from '../types'
 
 const router = useRouter()
 const rightContainerRef = ref<HTMLElement | null>(null)
-
-// ========== 自适应缩放（和写写感想完全一样） ==========
-const DESIGN_WIDTH = 1920
-const DESIGN_HEIGHT = 1080
-
-const pageStyle = ref({
-  transform: 'scale(1)',
-  transformOrigin: 'top left',
-  width: DESIGN_WIDTH + 'px',
-  height: DESIGN_HEIGHT + 'px',
-  marginLeft: '0px',
-  marginTop: '0px'
-})
-
-const updateScale = () => {
-  const scaleX = window.innerWidth / DESIGN_WIDTH
-  const scaleY = window.innerHeight / DESIGN_HEIGHT
-  pageStyle.value = {
-    transform: `scale(${scaleX}, ${scaleY})`,
-    transformOrigin: 'top left',
-    width: DESIGN_WIDTH + 'px',
-    height: DESIGN_HEIGHT + 'px',
-    marginLeft: '0px',
-    marginTop: '0px'
-  }
-}
 
 // ========== 提交按钮位置计算 ==========
 const submitBtnTop = ref(0)
@@ -200,7 +184,6 @@ const updateSubmitBtnPosition = () => {
 
 // ========== 气泡折叠 ==========
 const isBubbleExpanded = ref(true)
-const hasAutoPlayed = ref(false)
 
 // ========== Tab课文标签 ==========
 const tabList = ref([
@@ -209,8 +192,8 @@ const tabList = ref([
 ])
 
 const articleContents: Record<string, string> = {
-  bridge: '《赵州桥》课文文本...',
-  painting: '《一幅名扬中外的画》课文文本...'
+  bridge: lessonSource.zhaozhouqiao.html,
+  painting: lessonSource.famous_painting.html
 }
 
 // ========== 填空业务数据 ==========
@@ -283,16 +266,17 @@ const blockPassedMap = reactive<Record<string, boolean>>({
   'block-bridge': false,
   'block-painting': false
 })
-// 是否显示参考答案
-const showRefMap = reactive<Record<string, boolean>>({
-  'block-bridge': false,
-  'block-painting': false
-})
 
 const talkText = ref('')
 const conversationHistory = ref<Array<{ role: string; text: string }>>([])
 
-const currentGuideText = '亲爱的某某某同学，来体会“围绕一个意思把一段话写清楚”的表达方法吧。'
+const apiParams = ref<InitialImpressionsParams | null>(null)
+const apiState = ref<InitialInsightState | null>(null)
+
+// 提交中状态：回车提交时显示「提交中…」提示（无背景无边框）
+const isSubmitting = ref(false)
+
+const currentGuideText = computed(() => apiParams.value?.introBubbleText || '')
 
 // ========== computed ==========
 const currentTabName = computed(() => {
@@ -322,6 +306,54 @@ const visibleBlocks = computed(() => {
 
 // 是否全部完成
 const isAllCompleted = computed(() => blockList.value.every(b => blockPassedMap[b.id]))
+
+// ========== 本地答题缓存（跨刷新持久化）==========
+const {
+  markCompleted: markFillBlankCompleted,
+  loadProgress: loadFillBlankProgress,
+  saveProgress: saveFillBlankProgress,
+  isCompleted: isFillBlankCompleted,
+} = useCompletionPersistence('fill-blank')
+
+interface FillBlankSnapshot {
+  blankInputMap: Record<string, string[]>
+  blankStatusMap: Record<string, string[]>
+  blankAttemptCount: Record<string, number[]>
+  autoFilledMap: Record<string, boolean[]>
+  blockAttemptMap: Record<string, number>
+  blockPassedMap: Record<string, boolean>
+}
+
+const buildFillBlankSnapshot = (): FillBlankSnapshot => ({
+  blankInputMap: JSON.parse(JSON.stringify(blankInputMap)),
+  blankStatusMap: JSON.parse(JSON.stringify(blankStatusMap)),
+  blankAttemptCount: JSON.parse(JSON.stringify(blankAttemptCount)),
+  autoFilledMap: JSON.parse(JSON.stringify(autoFilledMap)),
+  blockAttemptMap: { ...blockAttemptMap },
+  blockPassedMap: { ...blockPassedMap }
+})
+
+const applyFillBlankSnapshot = (snap: FillBlankSnapshot | null): boolean => {
+  if (!snap) return false
+  ;(['blankInputMap', 'blankStatusMap', 'blankAttemptCount', 'autoFilledMap', 'blockAttemptMap', 'blockPassedMap'] as const).forEach(key => {
+    const src = snap[key] as Record<string, unknown>
+    const targets: Record<string, unknown> = {
+      blankInputMap, blankStatusMap, blankAttemptCount, autoFilledMap, blockAttemptMap, blockPassedMap
+    }
+    const target = targets[key] as Record<string, unknown>
+    Object.keys(src).forEach(k => { target[k] = src[k] })
+  })
+  return true
+}
+
+// 答题状态变化即存（输入/判定/通过情况），刷新后原样恢复
+watch(
+  () => [
+    JSON.stringify(blankInputMap), JSON.stringify(blankStatusMap),
+    JSON.stringify(autoFilledMap), JSON.stringify(blockPassedMap)
+  ],
+  () => { saveFillBlankProgress(buildFillBlankSnapshot() as unknown as Record<string, unknown>) }
+)
 
 const completionMessage = computed(() => {
   return '太棒啦！你已经掌握了围绕一个意思把一段话写清楚的阅读方法！'
@@ -456,7 +488,6 @@ const switchToTab = (tabId:string) => {
   currentTabId.value = tabId
   currentPanel.value = 'human'
   updateSubmitBtnPosition()
-  saveState()
 }
 
 const openArticle = () => {
@@ -470,51 +501,88 @@ const closeArticle = () => {
 const MAX_WRONG_ATTEMPTS = 2
 
 // ========== 填空提交单个空 ==========
-const submitBlank = async (blockId:string, blankIndex:number) => {
-  const block = blockList.value.find(b=>b.id===blockId)
-  if(!block) return
+const submitBlank = async (blockId: string, blankIndex: number) => {
+  if (isSubmitting.value) return
+  const block = blockList.value.find(b => b.id === blockId)
+  if (!block) return
   const userVal = blankInputMap[blockId][blankIndex].trim()
-  if(!userVal) return
+  if (!userVal) return
 
   blankAttemptCount[blockId][blankIndex] += 1
   blockAttemptMap[blockId] += 1
-  const realAnswer = block.blanks[blankIndex].answer.trim()
-  const isCorrect = userVal === realAnswer
+  isSubmitting.value = true
 
-  if(isCorrect){
-    blankStatusMap[blockId][blankIndex] = 'correct'
-    conversationHistory.value.push({role:'student', text:`填空${blankIndex+1}:${userVal}`})
-    talkText.value = '回答正确，请继续填写下一个关键词！'
-    playAudio(talkText.value)
-  }else{
-    // 不显示错误答案，清空输入框
-    blankInputMap[blockId][blankIndex] = ''
+  try {
+    // Find API question for this block
+    const questionIdx = blockList.value.findIndex(b => b.id === blockId)
+    const apiQuestion = apiState.value?.questions[questionIdx]
 
-    if(blankAttemptCount[blockId][blankIndex] >= MAX_WRONG_ATTEMPTS){
-      // 达到最大错误次数：AI自动填入正确答案（黄色样式）
-      blankStatusMap[blockId][blankIndex] = 'auto-filled'
-      autoFilledMap[blockId][blankIndex] = true
-      blankInputMap[blockId][blankIndex] = realAnswer
-      const explainText = `这个填空的正确答案是"${realAnswer}"。请对照课文理解这个关键词的用法。`
-      talkText.value = explainText
-      playAudio(explainText)
-    }else{
-      // 第一次错误：红色提示，AI讲解
-      blankStatusMap[blockId][blankIndex] = 'wrong'
-      currentPanel.value = 'human'
-      const feedbackText = `回答不正确，请再仔细读一读课文，重新填写。你还有 ${MAX_WRONG_ATTEMPTS - blankAttemptCount[blockId][blankIndex]} 次机会。`
-      talkText.value = feedbackText
-      playAudio(feedbackText)
+    if (apiQuestion) {
+      // 后端要求 blankId 为题目 content 中填空项的真实 id（如 b1/b2…），
+      // 不能用前端自造的 blank-{n}，否则会 400 QUESTION_NOT_FOUND。
+      const blankItems = ((apiQuestion.content as Array<{ type?: string; id?: string }>) || [])
+        .filter((c) => c && c.type === 'blank')
+      const blankId = blankItems[blankIndex]?.id || `blank-${blankIndex}`
+      const { submitId } = await submitInitialInsight(apiQuestion.id, blankId, userVal)
+
+      // Poll for result
+      let result = null
+      for (let i = 0; i < 10; i++) {
+        await new Promise(r => setTimeout(r, 1000))
+        result = await getInitialInsightSubmitResult(apiQuestion.id, submitId)
+        if (!result.isProcessing) break
+      }
+
+      if (result && result.isPassed) {
+        blankStatusMap[blockId][blankIndex] = 'correct'
+        conversationHistory.value.push({ role: 'student', text: `填空${blankIndex + 1}: ${userVal}` })
+        talkText.value = result.feedback || '回答正确，请继续填写下一个关键词！'
+        playAudio(talkText.value)
+      } else if (result) {
+        // Wrong answer
+        blankInputMap[blockId][blankIndex] = ''
+        if (blankAttemptCount[blockId][blankIndex] >= MAX_WRONG_ATTEMPTS) {
+          blankStatusMap[blockId][blankIndex] = 'auto-filled'
+          autoFilledMap[blockId][blankIndex] = true
+          blankInputMap[blockId][blankIndex] = result.referenceAnswer || block.blanks[blankIndex].answer
+          talkText.value = result.feedback || `这个填空的正确答案是"${result.referenceAnswer}"。`
+          playAudio(talkText.value)
+        } else {
+          blankStatusMap[blockId][blankIndex] = 'wrong'
+          currentPanel.value = 'human'
+          talkText.value = result.feedback || '回答不正确，请再仔细读一读课文。'
+          playAudio(talkText.value)
+        }
+      }
+    }
+
+    // Check if block is complete
+    const allOk = blankStatusMap[blockId].every(s => s === 'correct' || s === 'auto-filled')
+    if (allOk) {
+      blockPassedMap[blockId] = true
+    }
+    updateSubmitBtnPosition()
+  } catch (e) {
+    console.error('提交失败:', e)
+    // Fallback to local validation if API fails
+    const realAnswer = block.blanks[blankIndex].answer.trim()
+    const isCorrect = userVal === realAnswer
+    if (isCorrect) {
+      blankStatusMap[blockId][blankIndex] = 'correct'
+    } else {
+      blankInputMap[blockId][blankIndex] = ''
+      if (blankAttemptCount[blockId][blankIndex] >= MAX_WRONG_ATTEMPTS) {
+        blankStatusMap[blockId][blankIndex] = 'auto-filled'
+        autoFilledMap[blockId][blankIndex] = true
+        blankInputMap[blockId][blankIndex] = realAnswer
+      } else {
+        blankStatusMap[blockId][blankIndex] = 'wrong'
+      }
     }
   }
-
-  // 检查本块是否全部完成
-  const allOk = blankStatusMap[blockId].every(s=>s==='correct' || s==='auto-filled')
-  if(allOk){
-    blockPassedMap[blockId] = true
+  finally {
+    isSubmitting.value = false
   }
-  saveState()
-  updateSubmitBtnPosition()
 }
 
 // ========== 提交按钮：切换下一课 ✅修复硬编码映射 ==========
@@ -534,209 +602,114 @@ const handleSubmitAll = async () => {
     }
     currentTabId.value = blockToTab[nextBlock.id]
     currentPanel.value = 'human'
-    const text = await fetchTalkText(nextBlock.id)
-    talkText.value = text
-    playAudio(text)
+    talkText.value = '很好，我们继续练习，体会写清楚一段话的技巧。'
+    playAudio(talkText.value)
     updateSubmitBtnPosition()
-    saveState()
   }
   // 全部完成
   if(isAllCompleted.value){
-    talkText.value = '太棒啦！你已经完成全部填空练习。'
-    playAudio(talkText.value)
-    saveState()
+    try {
+      const ending = await getInitialInsightEnding()
+      talkText.value = ending.comment
+      playAudio(ending.comment)
+    } catch (e) {
+      console.error('获取结束语失败:', e)
+    }
   }
 }
 
-// ========== 语音 ==========
-const playAudio = (text:string) => {
-  console.log('播放TTS语音', text)
-}
+// ========== 语音（复用 composable） ==========
+const { isPlaying, playAudio, stop, playBubbleAudio: _playBubbleAudio } = useAudioPlayer()
 const playBubbleAudio = () => {
   isBubbleExpanded.value = true
-  if(talkText.value) playAudio(talkText.value)
+  if (talkText.value) playAudio(talkText.value)
 }
 watch(talkText, ()=>{
   isBubbleExpanded.value = false
 }, {immediate:false})
 
-const mockVoice = ()=>{}
-const mockVideo = ()=>{}
-
-const fetchTalkText = async (blockId:string):Promise<string>=>{
-  const map:Record<string,string> = {
-    'block-bridge':'亲爱的某某同学，我们来梳理“围绕一个意思把一段话写清楚”的表达方法吧。你可以点击课文名称打开课文哦。',
-    'block-painting':'很好，我们继续练习，体会写清楚一段话的技巧。'
-  }
-  return map[blockId] || '请完成填空练习。'
-}
-
-// ========== 本地持久化保存状态 ==========
-const STORAGE_KEY = 'fill-blank-state'
-const saveState = () => {
-  const state = {
-    currentTabId:currentTabId.value,
-    currentPanel:currentPanel.value,
-    blankInputMap:JSON.parse(JSON.stringify(blankInputMap)),
-    blankStatusMap:JSON.parse(JSON.stringify(blankStatusMap)),
-    blankAttemptCount:JSON.parse(JSON.stringify(blankAttemptCount)),
-    autoFilledMap:JSON.parse(JSON.stringify(autoFilledMap)),
-    blockAttemptMap:{...blockAttemptMap},
-    blockPassedMap:{...blockPassedMap},
-    showRefMap:{...showRefMap},
-    talkText:talkText.value,
-    conversationHistory:JSON.parse(JSON.stringify(conversationHistory.value)),
-    hasAutoPlayed:hasAutoPlayed.value
-  }
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
-}
-
-const restoreState = () => {
-  const str = localStorage.getItem(STORAGE_KEY)
-  if(!str) return false
-  try{
-    const s = JSON.parse(str)
-    currentTabId.value = s.currentTabId || 'bridge'
-    currentPanel.value = s.currentPanel || 'human'
-    Object.assign(blankInputMap, s.blankInputMap || {})
-    Object.assign(blankStatusMap, s.blankStatusMap || {})
-    Object.assign(blankAttemptCount, s.blankAttemptCount || {})
-    Object.assign(autoFilledMap, s.autoFilledMap || {})
-    Object.assign(blockAttemptMap, s.blockAttemptMap || {})
-    Object.assign(blockPassedMap, s.blockPassedMap || {})
-    Object.assign(showRefMap, s.showRefMap || {})
-    talkText.value = s.talkText || ''
-    conversationHistory.value = s.conversationHistory || []
-    hasAutoPlayed.value = s.hasAutoPlayed || false
-
-    // 如果缓存读到全部任务完成，清空缓存重置
-    const allDone = blockList.value.every(b => blockPassedMap[b.id])
-    if(allDone) {
-      localStorage.removeItem(STORAGE_KEY)
-      blockList.value.forEach(b=>{
-        blockPassedMap[b.id] = false
-        blockAttemptMap[b.id] = 0
-        showRefMap[b.id] = false
-        blankInputMap[b.id] = b.blanks.map(()=>'')
-        blankStatusMap[b.id] = b.blanks.map(()=>'')
-        blankAttemptCount[b.id] = b.blanks.map(()=>0)
-        autoFilledMap[b.id] = b.blanks.map(()=>false)
-      })
-      return false
+watch(isAllCompleted, async (val) => {
+  if (val) {
+    // 写入本地完成态（含答题快照），刷新仍停留在完成屏；首页「初步感悟」变绿
+    markFillBlankCompleted(buildFillBlankSnapshot() as unknown as Record<string, unknown>)
+    const { useProgressStore } = await import('../stores/progress')
+    useProgressStore().markTaskFinished('fill-blank')
+    try {
+      const ending = await getInitialInsightEnding()
+      talkText.value = ending.comment
+      playAudio(ending.comment)
+    } catch (e) {
+      console.error('获取结束语失败:', e)
     }
-    return true
-  }catch{
-    localStorage.removeItem(STORAGE_KEY)
-    return false
+  }
+})
+
+// ========== 顶部导航功能 ==========
+// 语音播报开关：开启时播报当前数字人引导语，关闭时停止（与 PromoteCulture 创作页一致）
+const voiceBroadcastOn = ref(true)
+const playVoiceBroadcast = () => {
+  voiceBroadcastOn.value = !voiceBroadcastOn.value
+  if (voiceBroadcastOn.value) {
+    if (talkText.value) playAudio(talkText.value)
+  } else {
+    stop()
   }
 }
-
+// 回看视频：打开视频弹窗，播放后端 params.introVideo.url
+const showVideoModal = ref(false)
+const openVideoModal = () => {
+  showVideoModal.value = true
+}
 
 // 导航
 const goBack = ()=>{
-  saveState()
-  router.push('/preview/write-feel')
-}
-const goToReport = ()=>router.push('/report')
-const goHome = ()=>{
-  saveState()
   router.push('/')
 }
+const { goToReport, goHome } = useCompletionNav()
 
 watch([()=>blankInputMap, currentPanel], ()=>{
-  saveState()
   updateSubmitBtnPosition()
 }, {deep:true})
 
-onMounted(async ()=>{
-  updateScale()
-  window.addEventListener('resize', updateScale)
-  const restored = restoreState()
-  if(!restored){
-    const firstBid = blockList.value[0].id
-    const text = await fetchTalkText(firstBid)
-    talkText.value = text
-    setTimeout(()=>playAudio(text), 500)
-    hasAutoPlayed.value = true
-    saveState()
-  }else if(!hasAutoPlayed.value && talkText.value){
-    // ✅修复变量名bug
-    setTimeout(()=>playAudio(talkText.value), 500)
-    hasAutoPlayed.value = true
-    saveState()
+onMounted(async () => {
+  try {
+    const [params, state] = await Promise.all([
+      getInitialInsightParams(),
+      getInitialInsightState()
+    ])
+    apiParams.value = params
+    apiState.value = state
+    talkText.value = params.introBubbleText
+    // Map API questions to blocks if possible, or keep existing block structure
+    // but use API for submit/validation
+    if (!isAllCompleted.value && isFillBlankCompleted()) {
+      // 本地已完成（后端未落库/数据不全）→ 以本地快照为准，停留在完成屏
+      applyFillBlankSnapshot(loadFillBlankProgress<Record<string, unknown>>() as unknown as FillBlankSnapshot)
+    }
+    if (!isAllCompleted.value) {
+      setTimeout(() => playAudio(params.introBubbleText), 500)
+    }
+    updateSubmitBtnPosition()
+  } catch (e) {
+    console.error('加载初步感悟数据失败:', e)
+    // 后端不可用：用本地快照兜底恢复答题记录/完成态
+    if (!applyFillBlankSnapshot(loadFillBlankProgress<Record<string, unknown>>() as unknown as FillBlankSnapshot)) {
+      talkText.value = toUserFriendlyError(e)
+    } else if (!isAllCompleted.value) {
+      talkText.value = '后端服务暂不可用，已恢复你之前的答题记录。'
+    }
   }
-  updateSubmitBtnPosition()
-})
-
-onUnmounted(()=>{
-  window.removeEventListener('resize', updateScale)
-  saveState()
 })
 </script>
 
 <style scoped>
-.page-container {
-  width: 1920px;
-  height: 1080px;
-  background: url('/image/image 110.png') no-repeat center center;
-  background-size: cover;
-  position: relative;
-  overflow: hidden;
-}
+
 
 /* ========== 顶部导航【和写写感想完全复用】 ========== */
-.top-nav {
-  position: absolute;
-  top: 30px;
-  left: 60px;
-  right: 60px;
-  height: 65px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 0 25px;
-  background: rgba(245, 244, 243, 0.45);
-  border-radius: 12px;
-  color: #4e1b05ed;
-  font-weight: 900;
-  font-size: 25px;
-  z-index: 10;
-}
-.back-icon {
-  font-size: 22px;
-  cursor: pointer;
-}
-.top-nav-buttons {
-  margin-left: auto;
-  display: flex;
-  gap: 12px;
-}
-.nav-btn {
-  width: 120px;
-  height: 35px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 16px;
-  background: rgb(220, 137, 29);
-  color: #fff;
-  border-radius: 8px;
-  font-size: 15px;
-  font-weight: 300;
-  letter-spacing: 1px;
-  box-shadow: 0 2px 4px rgba(118, 117, 117, 0.647);
-  cursor: pointer;
-}
-.btn-icon {
-  width: 18px;
-  height: 18px;
-  object-fit: contain;
-}
-
 /* ========== Tab标签【完全复用】 ========== */
 .tab-wrapper {
   position: absolute;
-  top: 110px;
+  top: 130px;
   left: 60px;
   display: flex;
   align-items: center;
@@ -789,115 +762,18 @@ onUnmounted(()=>{
 .left-area {
   position: absolute;
   top: 170px;
-  left: 60px;
+  left: 2.5%;
   bottom: 20px;
-  width: 500px;
+  width: 47%;
   z-index: 5;
-}
-.article-close-btn {
-  position: absolute;
-  top: -50px;
-  right: -200px;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: #fff;
-  text-align: center;
-  line-height: 32px;
-  font-size: 18px;
-  cursor: pointer;
-  z-index: 6;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  transition: transform 0.2s;
-}
-.article-close-btn:hover {
-  transform: scale(1.1);
-}
-.digital-human-area {
-  position: absolute;
-  left: 80px;
-  bottom: 20px;
-}
-.digital-human-img {
-  width: 180px;
-  height: auto;
-  display: block;
-  filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.25));
-}
-/* 气泡+按钮容器：flex列布局，按钮跟随气泡高度 */
-.bubble-action-wrap {
-  position: absolute;
-  left: 190px;
-  top: 20px;
-  width: 300px;
-  display: flex;
-  flex-direction: column;
-  gap: 19px; /* 0.5cm */
-}
-.human-talk-bubble {
-  position: relative;
-  width: 100%;
-  background: #fff;
-  border-radius: 12px;
-  padding: 14px 16px;
-  font-size: 15px;
-  line-height: 1.6;
-  color: #333;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-}
-.bubble-text {
-  flex: 1;
-  max-height: 72px;
-  overflow: hidden;
-  transition: max-height 0.3s ease;
-}
-.human-talk-bubble.expanded .bubble-text {
-  max-height: none;
-}
-.bubble-voice-icon {
-  width: 20px;
-  height: 20px;
-  cursor: pointer;
-  flex-shrink: 0;
-  margin-top: 2px;
-  object-fit: contain;
-}
-
-.article-panel {
-  width: 700px;
-  height: 600px;
-  background: rgba(255, 255, 255, 0.8);
-  border-radius: 18px;
-  padding: 20px 24px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-  box-sizing: border-box;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-}
-.article-content {
-  flex: 1;
-}
-.article-title {
-  font-size: 20px;
-  margin: 0 0 12px;
-  color: #333;
-}
-.article-body {
-  font-size: 15px;
-  line-height: 1.8;
-  color: #444;
 }
 
 /* ========== 右侧填空面板 ========== */
 .right-container {
   position: absolute;
   top: 170px;
-  right: 120px;
-  width: 580px;
+  right: 2.5%;
+  width: 47%;
   z-index: 10;
   background: rgba(255, 255, 255, 0.8);
   border-radius: 18px;
@@ -1061,6 +937,23 @@ onUnmounted(()=>{
   border-radius: 10px;
   border-left: 3px solid #1976d2;
 }
+
+/* 提交中提示：无背景、无边框，仅文字 + 轻微呼吸动画 */
+.submitting-hint {
+  margin-top: 12px;
+  padding: 4px 0;
+  background: transparent;
+  border: none;
+  color: #ee7104;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  animation: submittingPulse 1.1s ease-in-out infinite;
+}
+@keyframes submittingPulse {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 1; }
+}
 .ref-label {
   font-size:13px;
   color:#1976d2;
@@ -1072,12 +965,11 @@ onUnmounted(()=>{
   color:#333;
 }
 
-/* 提交按钮 */
+/* 提交按钮：紧跟答题框正下方 0.5cm，宽度与答题框一致 */
 .submit-lesson-btn {
-  margin: 10px 0;
   position: absolute;
-  right: 120px;
-  width: 580px;
+  right: 2.5%;
+  width: 47%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1089,6 +981,7 @@ onUnmounted(()=>{
   color: #888;
   cursor: not-allowed;
   transition: background 0.3s;
+  box-sizing: border-box;
 }
 .submit-lesson-btn.gold-bg {
   background: #daa520;
@@ -1104,16 +997,6 @@ onUnmounted(()=>{
   object-fit: contain;
 }
 
-/* 完成遮罩、数字人反馈气泡，完全复用写写感想 */
-.completion-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.55);
-  z-index: 2;
-}
 .completion-feedback-bubble {
   position: relative;
   width: 100%;

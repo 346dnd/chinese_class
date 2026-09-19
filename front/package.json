@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "gen-api": "openapi --input ./apifox-openapi.json --output ./src/api/generated --client axios"
   },
   "dependencies": {
     "axios": "^1.6.0",

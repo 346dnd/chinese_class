@@ -1,20 +1,13 @@
 <template>
-  <div class="page-container" :style="pageStyle">
-    <!-- 顶部导航栏 -->
-    <div class="top-nav">
-      <span class="back-icon" @click="goBack">&lt;</span>
-      <span class="nav-title">宣传有法：学习《一幅名扬中外的画》的表达方法</span>
-      <div class="top-nav-buttons">
-        <div class="nav-btn" @click="mockVoice">
-          <img src="/image/语音 1.png" alt="语音播报" class="btn-icon" />
-          开启语音
-        </div>
-        <div class="nav-btn" @click="mockVideo">
-          <img src="/image/视频 2.png" alt="回看视频" class="btn-icon" />
-          回看视频
-        </div>
-      </div>
-    </div>
+  <ScaleCanvas background="/image/image 4.png">
+    <PageHeader
+      title="宣传有法：学习《一幅名扬中外的画》的表达方法"
+      @back="goBack"
+      voice-broadcast
+      :voice-on="voiceBroadcastOn"
+      @toggle-voice="playVoiceBroadcast"
+      @video="openVideoModal"
+    />
 
     <!-- 课文标签tab -->
     <div class="tab-wrapper">
@@ -29,14 +22,9 @@
       </div>
     </div>
 
-    <!-- 背景图 -->
-    <div class="bg-wrap">
-      <img src="/image/image 4.png" alt="背景" class="bg-img" />
-    </div>
-
     <!-- 左侧区域：数字人 + 课文弹窗【和赵州桥布局完全对齐】 -->
     <div class="left-area">
-      <div class="digital-human-area" v-if="currentPanel === 'human'">
+      <div class="digital-human-area" v-if="currentPanel === 'human' && !isAllCompleted">
         <img
           src="/image/小小_汉服 1.png"
           alt="数字人"
@@ -54,23 +42,21 @@
             <span class="bubble-arrow"></span>
           </div>
 
-          <div class="completion-action-bar" v-if="isAllCompleted">
-            <button class="completion-action-btn report-btn" @click="handleFinishOk">
-              <img src="/image/矢量 69.png" alt="图标" class="bar-btn-icon" />
-              好的
-            </button>
-          </div>
+          <CompletionFeedback
+            :show="isAllCompleted"
+            :show-bubble="false"
+            @go-report="goToReport"
+            @go-home="goHome"
+          />
         </div>
       </div>
 
-      <!-- 课文关闭叉叉位置和赵州桥保持一致 top:-50px; right:-150px -->
-      <div class="article-close-btn" v-if="currentPanel === 'lesson'" @click="closeArticle">×</div>
-      <div class="article-panel" v-if="currentPanel === 'lesson'">
-        <div class="article-content">
-          <h3 class="article-title">{{ currentTabName }}</h3>
-          <div class="article-body" v-html="currentArticleContent"></div>
-        </div>
-      </div>
+      <ArticleReader
+        v-if="currentPanel === 'lesson'"
+        :visible="currentPanel === 'lesson'"
+        :htmlContent="currentArticleContent"
+        @close="closeArticle"
+      />
     </div>
 
     <!-- 右侧答题容器 -->
@@ -89,8 +75,8 @@
         <!-- 两列表格 -->
         <div class="table-wrapper">
           <div class="table-header">
-            <div class="col-left-header">怎么写</div>
-            <div class="col-right-header">《一幅名扬中外的画》第3自然段</div>
+            <div class="col-left-header">{{ columnHeaders?.left || '怎么写' }}</div>
+            <div class="col-right-header">{{ columnHeaders?.right || '《一幅名扬中外的画》第3自然段' }}</div>
           </div>
 
           <div
@@ -131,21 +117,29 @@
                 <button
                   v-if="!isAllCompleted && statusList[idx] !== 'correct'"
                   class="mic-btn"
-                  @click="handleVoiceInput(idx)"
+                  :class="{ recording: recordStatus[idx]?.recording }"
+                  @click="startRecord(idx)"
                 >
                   <img src="/image/矢量 62.png" alt="语音" class="mic-icon" />
-                  <span class="mic-text">语音</span>
+                  <span class="mic-text">{{ recordStatus[idx]?.recording ? '停止' : '语音' }}</span>
                 </button>
+              </div>
+              <div class="record-status" v-if="recordStatus[idx]?.recording || transcribingStep === idx">
+                <span v-if="recordStatus[idx]?.recording" class="red-dot"></span>
+                {{ recordStatus[idx]?.recording ? `录音中（${recordStatus[idx].countdown}秒）` : '识别中…' }}
               </div>
             </div>
           </div>
         </div>
 
+        <!-- 提交中提示：输入框下方 -->
+        <div class="submitting-tip" v-if="submitting">提交中…</div>
+
         <button
           v-if="!isAllCompleted"
           class="submit-btn"
           :class="{ submitGold: canSubmit && allFilled }"
-          :disabled="!canSubmit || !allFilled"
+          :disabled="!canSubmit || !allFilled || submitting"
           @click="handleSubmit"
         >
           提交答案
@@ -153,34 +147,65 @@
       </div>
     </div>
 
-    <div class="completion-overlay" v-if="isAllCompleted"></div>
-  </div>
+  </ScaleCanvas>
+
+  <!-- 完成态：放在 ScaleCanvas 之外（视口级），fixed 相对视口、z-index 盖住整页含 header -->
+  <CompletionOverlay :show="isAllCompleted">
+      <div class="left-area">
+        <div class="digital-human-area">
+          <img
+            src="/image/小小_汉服 1.png"
+            alt="数字人"
+            class="digital-human-img"
+          />
+          <div class="bubble-action-wrap" v-if="talkText">
+            <div class="human-talk-bubble">
+              <img
+                src="/image/语音朗读.png"
+                alt="播放"
+                class="bubble-voice-icon"
+                @click="playBubbleAudio"
+              />
+              <span class="bubble-text">{{ talkText }}</span>
+              <span class="bubble-arrow"></span>
+            </div>
+
+            <CompletionFeedback
+              :show="true"
+              :show-bubble="false"
+              @go-report="goToReport"
+              @go-home="goHome"
+            />
+          </div>
+        </div>
+      </div>
+    </CompletionOverlay>
+
+  <!-- 回看视频弹窗 -->
+  <VideoModal v-model:show="showVideoModal" :url="apiParams?.introVideo?.url || ''" />
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch, reactive } from 'vue'
+import { ref, computed, onMounted, watch, reactive, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
+import ScaleCanvas from '../components/ScaleCanvas.vue'
+import PageHeader from '../components/PageHeader.vue'
+import CompletionOverlay from '../components/CompletionOverlay.vue'
+import CompletionFeedback from '../components/completion/CompletionFeedback.vue'
+import { useCompletionNav } from '../components/completion/useCompletionNav'
+import VideoModal from '../components/VideoModal.vue'
+import { useAudioPlayer } from '../composables/useAudioPlayer'
+import { useFile } from '../composables/useFile'
+import { lessonSource } from '../utils/lessonText'
+import ArticleReader from '../components/ArticleReader.vue'
+import { getWenMingZhongWaiParams, getWenMingZhongWaiState, submitWenMingZhongWai, getWenMingZhongWaiSubmitResult , getTranscription, toUserFriendlyError } from '../api'
+import { useCompletionPersistence } from '../composables/useCompletionPersistence'
+import type { WenMingZhongWaiParams, WenMingZhongWaiState } from '../types'
 
 const router = useRouter()
 
-const DESIGN_WIDTH = 1920
-const DESIGN_HEIGHT = 1080
-const pageStyle = ref({
-  transform: 'scale(1)',
-  transformOrigin: 'top left',
-  width: DESIGN_WIDTH + 'px',
-  height: DESIGN_HEIGHT + 'px',
-})
-const updateScale = () => {
-  const scaleX = window.innerWidth / DESIGN_WIDTH
-  const scaleY = window.innerHeight / DESIGN_HEIGHT
-  pageStyle.value = {
-    transform: `scale(${scaleX}, ${scaleY})`,
-    transformOrigin: 'top left',
-    width: DESIGN_WIDTH + 'px',
-    height: DESIGN_HEIGHT + 'px',
-  }
-}
+// 查看评价：统一跳转到学习报告页；回到首页：跳首页
+const { goToReport, goHome } = useCompletionNav()
 
 const isBubbleExpanded = ref(false)
 
@@ -188,7 +213,7 @@ const tabList = ref([{ id: 'painting', name: '一幅名扬中外的画' }])
 const currentTabId = ref('painting')
 const currentPanel = ref<'human' | 'lesson'>('human')
 
-const articleHtmlRaw = ref(`《清明上河图》是北宋画家张择端画的一幅画。<br>这幅画描绘了北宋都城汴京的热闹景象。<br>画面上的人物很多，有农民、船工、商人、读书人，还有骑着毛驴的、推着小车的……<br>街上有挂着各种招牌的店铺，有热闹的街市，有横跨汴河的大桥。<br>这幅画已经名扬中外，让人看到了八百多年前古都的风貌。`)
+const articleHtmlRaw = ref(lessonSource.famous_painting.html)
 
 const currentTabName = computed(() => {
   const tab = tabList.value.find(t => t.id === currentTabId.value)
@@ -196,14 +221,13 @@ const currentTabName = computed(() => {
 })
 const currentArticleContent = computed(() => articleHtmlRaw.value)
 
-const questions = ref([
-  { label: '①先确定一个意思。', correctAnswer: '热闹', allowModifier: ['很热闹', '非常热闹', '特别热闹'] },
-  { label: '②根据这个意思写一句中心句。', correctAnswer: '画上的街市可热闹了。', allowModifier: [] },
-  { label: '③围绕中心句，后面每一句话写的内容都跟这个意思有关。可以用上修辞手法，可以用事例或细节把内容写具体。', correctAnswer: '街上有挂着各种招牌的店铺、作坊、酒楼、茶馆……', allowModifier: [] }
-])
+const questions = ref<Array<{ label: string; correctAnswer: string; allowModifier: string[] }>>([])
+const columnHeaders = ref<{ left: string; right: string } | null>(null)
 const answers = ref(['', '', ''])
 const statusList = ref<Array<''|'correct'|'wrong'|'systemFill'>>(['', '', ''])
 const attemptList = ref([0,0,0])
+// 提交中状态：请求发出到结果返回期间为 true，展示「提交中…」提示并禁用按钮
+const submitting = ref(false)
 
 const allFilled = computed(() => answers.value.every(a => !!a.trim()))
 const canSubmit = computed(()=>{
@@ -216,10 +240,49 @@ const canSubmit = computed(()=>{
 })
 const isAllCompleted = computed(() => statusList.value.every(s => s === 'correct' || s === 'systemFill'))
 
-const talkText = ref('')
-const loadTalkText = async () => {
-  talkText.value = '亲爱的某某同学，我们来梳理"围绕一个意思把一段话写清楚"的表达方法吧。你可以点击课文名称打开课文哦。'
+// ========== 本地答题缓存（跨刷新持久化）==========
+const {
+  markCompleted: markHuaCompleted,
+  loadProgress: loadHuaProgress,
+  saveProgress: saveHuaProgress,
+  isCompleted: isHuaCompleted,
+} = useCompletionPersistence('hua-express')
+
+interface HuaSnapshot {
+  answers: string[]
+  statusList: string[]
+  attemptList: number[]
 }
+
+const buildHuaSnapshot = (): HuaSnapshot => ({
+  answers: [...answers.value],
+  statusList: [...statusList.value],
+  attemptList: [...attemptList.value]
+})
+
+const applyHuaSnapshot = (snap: HuaSnapshot | null): boolean => {
+  if (!snap) return false
+  if (Array.isArray(snap.answers) && snap.answers.length === 3) answers.value = [...snap.answers]
+  if (Array.isArray(snap.statusList) && snap.statusList.length === 3) statusList.value = [...snap.statusList] as Array<''|'correct'|'wrong'|'systemFill'>
+  if (Array.isArray(snap.attemptList) && snap.attemptList.length === 3) attemptList.value = [...snap.attemptList]
+  return true
+}
+
+// 答题状态变化即存，刷新后原样恢复
+watch([answers, statusList, attemptList], () => {
+  saveHuaProgress(buildHuaSnapshot() as unknown as Record<string, unknown>)
+}, { deep: true })
+
+// 全部完成后写入本地完成态（含答题快照），刷新仍停留在完成屏；首页「一幅名扬中外的画」变绿
+watch(isAllCompleted, async (val) => {
+  if (val) {
+    markHuaCompleted(buildHuaSnapshot() as unknown as Record<string, unknown>)
+    const { useProgressStore } = await import('../stores/progress')
+    useProgressStore().markTaskFinished('qingming')
+  }
+})
+
+const talkText = ref('')
 
 const getPlaceholder = (idx:number)=>{
   const s = statusList.value[idx]
@@ -245,9 +308,7 @@ const closeArticle = () => {
   currentPanel.value = 'human'
 }
 
-const playAudio = (text: string) => {
-  console.log('播放语音：', text)
-}
+const { isPlaying, playAudio, stop } = useAudioPlayer()
 const playBubbleAudio = () => {
   isBubbleExpanded.value = true
   if (talkText.value) playAudio(talkText.value)
@@ -256,163 +317,233 @@ watch(talkText, () => {
   isBubbleExpanded.value = false
 })
 
-const handleVoiceInput = (idx:number)=>{
-  console.log(`第${idx+1}题语音输入触发`)
-}
+// ========== 语音输入（后端 ASR，与 ZZQ 范本一致）==========
+const { startRecording, stopRecordingAndUpload, stopRecording, isRecording: fileIsRecording } = useFile()
+// 每题录音状态（只保留当前页生命周期内；不限制次数，答错可反复重录）
+const recordStatus = reactive<Record<number, { recording: boolean; countdown: number; timer: number | null }>>({})
+const recordingStep = ref<number | null>(null)
+const transcribingStep = ref<number | null>(null)
 
-function checkAnswer(index:number, input:string):boolean{
-  const q = questions.value[index]
-  const trimInput = input.trim()
-  if(trimInput === q.correctAnswer) return true
-  if(q.allowModifier.includes(trimInput)) return true
-  return false
-}
-
-const handleSubmit = () => {
-  for(let i=0;i<questions.value.length;i++){
-    if(statusList.value[i] === 'correct' || statusList.value[i] === 'systemFill') continue
-
-    attemptList.value[i] += 1
-    const ok = checkAnswer(i, answers.value[i])
-    if(ok){
-      statusList.value[i] = 'correct'
-    }else{
-      statusList.value[i] = 'wrong'
-      answers.value[i] = ''
-      const errMsg = '这一题回答不正确，请重新填写。'
-      talkText.value = errMsg
-      playAudio(errMsg)
-
-      if(attemptList.value[i] >=3){
-        statusList.value[i] = 'systemFill'
-        answers.value[i] = questions.value[i].correctAnswer
-        talkText.value = '已经尝试3次，系统帮你填入正确答案。'
-        playAudio(talkText.value)
-      }
-    }
-  }
-  saveState()
-}
-
-const handleFinishOk = ()=>{
-  console.log('点击好的，结束，不跳转评价页')
-}
-
-const mockVoice = () => console.log('开启语音')
-const mockVideo = () => console.log('回看视频')
-
-const STORAGE_KEY = 'painting-lesson-state'
-const saveState = () => {
-  const state = {
-    answers: [...answers.value],
-    statusList: [...statusList.value],
-    attemptList: [...attemptList.value],
-    currentPanel: currentPanel.value,
-    talkText: talkText.value
-  }
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
-}
-const restoreState = async () => {
-  const raw = localStorage.getItem(STORAGE_KEY)
-  if (!raw) {
-    await loadTalkText()
-    saveState()
+const startRecord = async (idx: number) => {
+  const cur = recordStatus[idx] || (recordStatus[idx] = { recording: false, countdown: 0, timer: null })
+  if (cur.recording) {
+    stopRecord(idx)
     return
   }
+  // 避免多题同时录音
+  if (recordingStep.value !== null && recordingStep.value !== idx) return
+
   try {
-    const s = JSON.parse(raw)
-    answers.value = s.answers ?? ['', '', '']
-    statusList.value = s.statusList ?? ['', '', '']
-    attemptList.value = s.attemptList ?? [0,0,0]
-    currentPanel.value = s.currentPanel ?? 'human'
-    talkText.value = s.talkText ?? ''
-  } catch {
-    await loadTalkText()
+    await startRecording()
+    recordingStep.value = idx
+    cur.recording = true
+    cur.countdown = 60
+    talkText.value = '请清晰朗读，点击按钮可提前结束录音。'
+    cur.timer = window.setInterval(() => {
+      cur.countdown -= 1
+      if (cur.countdown <= 0) {
+        stopRecord(idx)
+      }
+    }, 1000)
+  } catch (e) {
+    console.error('启动录音失败:', e)
+    talkText.value = (e as any)?.message || '无法启动麦克风，请检查浏览器权限设置。'
   }
+}
+
+const stopRecord = async (idx: number) => {
+  const cur = recordStatus[idx]
+  if (!cur?.recording) return
+  if (cur.timer) clearInterval(cur.timer)
+  cur.recording = false
+  recordingStep.value = null
+  transcribingStep.value = idx
+  talkText.value = '正在识别语音，请稍候…'
+
+  try {
+    const { resp } = await stopRecordingAndUpload({ resource_info: `一幅名扬中外的画-第${idx + 1}题录音` })
+    const resourceId = resp.resource_id ?? ''
+
+    // 后端转写异步，轮询最多 6 次、每次间隔 500ms
+    let text = ''
+    for (let i = 0; i < 6; i++) {
+      if (i > 0) await new Promise(r => setTimeout(r, 500))
+      const res = await getTranscription(resourceId)
+      if (res && res.text) {
+        text = res.text
+        break
+      }
+    }
+
+    if (text) {
+      answers.value[idx] = text
+      talkText.value = `识别结果：${text}`
+    } else {
+      talkText.value = '未能识别到内容，请重新朗读或手动输入。'
+    }
+  } catch (e) {
+    console.error('语音识别失败:', e)
+    talkText.value = '语音识别失败，请手动输入。'
+  } finally {
+    transcribingStep.value = null
+  }
+}
+
+onUnmounted(() => {
+  Object.values(recordStatus).forEach(item => {
+    if (item.timer) clearInterval(item.timer)
+  })
+  if (fileIsRecording.value) stopRecording()
+})
+
+const handleSubmit = async () => {
+  submitting.value = true
+  try {
+    // Find the API question ID (use first matrix row's rowId or a default)
+    const questionId = apiParams.value?.matrix?.rows[0]?.rowId || 'q-wm-1'
+
+    // Build answers map from current inputs
+    const answerMap: Record<string, string> = {}
+    answers.value.forEach((a, i) => {
+      answerMap[`r${i + 1}`] = a
+    })
+
+    const { submitId } = await submitWenMingZhongWai(questionId, answerMap)
+
+    // Poll for result
+    let result = null
+    for (let i = 0; i < 10; i++) {
+      await new Promise(r => setTimeout(r, 1000))
+      result = await getWenMingZhongWaiSubmitResult(submitId)
+      if (!result.isProcessing) break
+    }
+
+    if (result) {
+      // Apply results to each question
+      for (let i = 0; i < questions.value.length; i++) {
+        if (statusList.value[i] === 'correct' || statusList.value[i] === 'systemFill') continue
+
+        const refAnswer = result.referenceAnswer?.[`r${i + 1}`] || ''
+        if (refAnswer && answers.value[i].trim() === refAnswer) {
+          statusList.value[i] = 'correct'
+        } else {
+          attemptList.value[i] += 1
+          if (attemptList.value[i] >= 3) {
+            statusList.value[i] = 'systemFill'
+            answers.value[i] = refAnswer || answers.value[i]
+          } else {
+            statusList.value[i] = 'wrong'
+            answers.value[i] = ''
+          }
+        }
+      }
+
+      talkText.value = result.feedback || ''
+      if (talkText.value) playAudio(talkText.value)
+    }
+  } catch (e) {
+    console.error('提交失败:', e)
+    talkText.value = toUserFriendlyError(e)
+    playAudio(talkText.value)
+  } finally {
+    submitting.value = false
+  }
+}
+
+// ========== 顶部导航功能 ==========
+// 语音播报开关：开启时播报当前数字人引导语，关闭时停止（与 PromoteCulture 创作页一致）
+const voiceBroadcastOn = ref(true)
+const playVoiceBroadcast = () => {
+  voiceBroadcastOn.value = !voiceBroadcastOn.value
+  if (voiceBroadcastOn.value) {
+    if (talkText.value) playAudio(talkText.value)
+  } else {
+    stop()
+  }
+}
+// 回看视频：打开视频弹窗，播放后端 params.introVideo.url
+const showVideoModal = ref(false)
+const openVideoModal = () => {
+  showVideoModal.value = true
 }
 
 const goBack = () => {
-  saveState()
   router.back()
 }
 
+const apiParams = ref<WenMingZhongWaiParams | null>(null)
+const apiState = ref<WenMingZhongWaiState | null>(null)
+
 onMounted(async () => {
-  updateScale()
-  window.addEventListener('resize', updateScale)
-  await restoreState()
-})
-onUnmounted(() => {
-  window.removeEventListener('resize', updateScale)
-  saveState()
+  try {
+    const [params, state] = await Promise.all([
+      getWenMingZhongWaiParams(),
+      getWenMingZhongWaiState()
+    ])
+    apiParams.value = params
+    apiState.value = state
+    // Map API matrix rows to questions
+    if (params.matrix && params.matrix.rows) {
+      // 后端 matrix 结构：第一个「全部 cell 都是 text」的行是列标题行（没有 input）；
+      // 含 input 的行才是真正的题目行。这样无论后端是否发表头行，前端都能正确渲染
+      // 3 道题，避免把列标题行误渲染为第 1 题。
+      const headerRow = params.matrix.rows.find(row => row.cells.every(c => c.type === 'text'))
+      const questionRows = params.matrix.rows.filter(row => row.cells.some(c => c.type === 'input'))
+      if (headerRow) {
+        const leftCell = headerRow.cells.find(c => c.columnKey === 'r1')
+        const rightCell = headerRow.cells.find(c => c.columnKey === 'r2')
+        columnHeaders.value = {
+          left: leftCell?.content || '怎么写',
+          right: rightCell?.content || '《一幅名扬中外的画》第3自然段'
+        }
+      }
+      questions.value = questionRows.map(row => {
+        const labelCell = row.cells.find(c => c.type === 'text')
+        return {
+          label: labelCell?.content || '',
+          correctAnswer: '', // Will come from API submit results
+          allowModifier: []
+        }
+      })
+      // Restore any existing answers from state
+      // 后端 submitLogs 为「最新在前」(id 降序)，先按 id 升序归一化为时间顺序，末尾即最新
+      if (state.submitLogs && state.submitLogs.length > 0) {
+        const sortedLogs = [...state.submitLogs].sort((a, b) => (a.id || '').localeCompare(b.id || ''))
+        const lastLog = sortedLogs[sortedLogs.length - 1]
+        if (lastLog.isCompleted) {
+          // Restore completed state
+          for (let i = 0; i < statusList.value.length; i++) {
+            statusList.value[i] = 'correct'
+          }
+        }
+      }
+    }
+    talkText.value = params.introBubbleText
+    // 本地已完成但后端数据不全 → 以本地快照为准，停留在完成屏
+    if (!isAllCompleted.value && isHuaCompleted()) {
+      applyHuaSnapshot(loadHuaProgress<Record<string, unknown>>() as unknown as HuaSnapshot)
+    }
+    if (!isAllCompleted.value) {
+      setTimeout(() => playAudio(params.introBubbleText), 500)
+    }
+  } catch (e) {
+    console.error('加载一幅名扬中外的画数据失败:', e)
+    // 后端不可用：用本地快照兜底恢复答题记录/完成态
+    if (!applyHuaSnapshot(loadHuaProgress<Record<string, unknown>>() as unknown as HuaSnapshot)) {
+      talkText.value = toUserFriendlyError(e)
+    } else if (!isAllCompleted.value) {
+      talkText.value = '后端服务暂不可用，已恢复你之前的答题记录。'
+    }
+  }
 })
 </script>
 
 <style scoped>
-.page-container {
-  width: 1920px;
-  height: 1080px;
-  position: relative;
-  overflow: hidden;
-  font-family: "Microsoft Yahei", sans-serif;
-}
-
-.top-nav {
-  position: absolute;
-  top: 30px;
-  left: 60px;
-  right: 60px;
-  height: 65px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 0 25px;
-  background: rgba(245, 244, 243, 0.45);
-  border-radius: 12px;
-  color: #4e1b05ed;
-  font-weight: 900;
-  font-size: 25px;
-  z-index: 10;
-}
-.back-icon {
-  font-size: 22px;
-  cursor: pointer;
-}
-.top-nav-buttons {
-  margin-left: auto;
-  display: flex;
-  gap: 12px;
-}
-.nav-btn {
-  width: 125px;
-  height: 38px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 0 14px;
-  background: #da9c20;
-  color: #ffffff;
-  border-radius: 10px;
-  font-size: 16px;
-  font-weight: 500;
-  letter-spacing: 1px;
-  box-shadow: 0 3px 6px rgba(0,0,0,0.15);
-  cursor: pointer;
-  transition: background 0.24s ease;
-}
-.nav-btn:hover {
-  background: #c48918;
-}
-.btn-icon {
-  width: 20px;
-  height: 20px;
-  object-fit: contain;
-}
 
 .tab-wrapper {
   position: absolute;
-  top: 110px;
-  left: 60px;
+  top: 130px;
+  left: 2.5%;
   display: flex;
   align-items: center;
   background: rgba(240, 239, 238, 0.2);
@@ -444,49 +575,21 @@ onUnmounted(() => {
   border-color: #d27f01;
 }
 
-.bg-wrap {
-  width: 100%;
-  height: 100%;
-}
-.bg-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
 /* 和赵州桥页面完全对齐 */
 .left-area {
   position: absolute;
   top: 170px;
-  left: 60px;
+  left: 2.5%;
   bottom: 20px;
-  width: 800px;
+  width: 47%;
   z-index: 5;
-}
-.article-close-btn {
-  position: absolute;
-  top: -50px;
-  right: -150px;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: #fff;
-  text-align: center;
-  line-height: 32px;
-  font-size: 18px;
-  cursor: pointer;
-  z-index: 6;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  transition: transform 0.2s;
-}
-.article-close-btn:hover {
-  transform: scale(1.1);
 }
 
 .digital-human-area {
   position: absolute;
   bottom: 320px;
-  left: 890px;
+  right: 20px;
+  left: auto;
 }
 .digital-human-img {
   width: 160px;
@@ -518,9 +621,14 @@ onUnmounted(() => {
 }
 .bubble-text {
   flex: 1;
-  max-height: 72px;
-  overflow: hidden;
+  max-height: 60vh; /* 不固定长度：短文自适应，超长才限高滑动，滚动条隐藏 */
+  overflow-y: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
   transition: max-height 0.3s ease;
+}
+.bubble-text::-webkit-scrollbar {
+  display: none; /* WebKit/Blink 隐藏滚动条 */
 }
 .human-talk-bubble.expanded .bubble-text {
   max-height: none;
@@ -576,39 +684,12 @@ onUnmounted(() => {
   background: #c4941c;
 }
 
-/* 课文面板完全复制赵州桥尺寸 */
-.article-panel {
-  width: 950px;
-  height: 870px;
-  background: rgba(255, 255, 255, 0.8);
-  border-radius: 8px;
-  padding: 20px 24px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-  box-sizing: border-box;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-}
-.article-content {
-  flex: 1;
-}
-.article-title {
-  font-size: 20px;
-  margin: 0 0 12px;
-  color: #333;
-}
-.article-body {
-  font-size: 15px;
-  line-height: 1.8;
-  color: #444;
-}
-
 /* 右侧答题面板 */
 .right-container {
   position: absolute;
   top: 150px;
-  right: 80px;
-  width: 580px;
+  right: 2.5%;
+  width: 42%;
   z-index: 10;
   background: rgba(255, 255, 255, 0.9);
   border-radius: 18px;
@@ -681,7 +762,9 @@ onUnmounted(() => {
   border-radius: 8px;
   overflow: visible;
   display: flex;
-  align-items: stretch;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
   transition: background 0.3s;
 }
 
@@ -722,7 +805,8 @@ onUnmounted(() => {
 .input-with-action {
   position: relative;
   width: 100%;
-  height: 100%;
+  flex: 1; /* 撑满整行剩余高度，与左侧题目背景格（col-left）等高 */
+  min-height: 54px; /* 仅当下方出现"录音中/识别中"状态行时的兜底 */
 }
 .input-field {
   width: 100%;
@@ -781,6 +865,30 @@ onUnmounted(() => {
   height: 16px;
   object-fit: contain;
 }
+.mic-btn.recording {
+  background: #fff4e0;
+  border-color: #ebaf36;
+  color: #d27f01;
+}
+.record-status {
+  font-size: 12px;
+  color: #e07b39;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+}
+.red-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #e53935;
+  animation: blink 1s infinite;
+}
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
 
 .submit-btn {
   width: 100%;
@@ -791,7 +899,7 @@ onUnmounted(() => {
   border-radius: 12px;
   font-size: 16px;
   cursor: pointer;
-  margin-top: 18px;
+  margin-top: 18.9px; /* 0.5cm gap */
   transition: background 0.25s;
 }
 .submit-btn.submitGold{
@@ -805,13 +913,30 @@ onUnmounted(() => {
   border-radius: 12px;
 }
 
-.completion-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.55);
-  z-index: 2;
+/* 提交中提示：输入框下方，带旋转小圈 */
+.submitting-tip {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: #e8f0fe;
+  border: 1px solid #1565c0;
+  color: #1565c0;
+  font-size: 14px;
+}
+.submitting-tip::before {
+  content: '';
+  width: 14px;
+  height: 14px;
+  border: 2px solid #1565c0;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: submit-spin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes submit-spin {
+  to { transform: rotate(360deg); }
 }
 </style>
